@@ -1,4 +1,4 @@
-"use server";
+// Client-side authentication functions
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -22,7 +22,6 @@ export async function loginUser(formData) {
       return { success: false, message: "Invalid email or password" };
     }
     
-    // Store token in cookies or localStorage in the client component
     return { 
       success: true, 
       token: data.token, 
@@ -54,7 +53,6 @@ export async function registerUser(formData) {
       return { success: false, message: "Email already exists or invalid data" };
     }
     
-    // Store token in cookies or localStorage in the client component
     return { 
       success: true, 
       token: data.token, 

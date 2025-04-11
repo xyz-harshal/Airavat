@@ -2,13 +2,13 @@
 import * as React from "react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import api from "@/lib/api-client";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Navbar } from "../components/navbar";
 import Link from "next/link";
-import { registerUser } from "../actions/auth";
 
 export default function CardWithForm() {
   const router = useRouter();
@@ -34,7 +34,11 @@ export default function CardWithForm() {
     setLoading(true);
     
     try {
-      const result = await registerUser(formData);
+      const result = await api.auth.register(
+        formData.username, 
+        formData.email, 
+        formData.password
+      );
       
       if (result.success) {
         // Store token in localStorage
@@ -42,7 +46,7 @@ export default function CardWithForm() {
         localStorage.setItem('username', result.username);
         
         // Redirect to dashboard or home page
-        router.push('/');
+        router.push('/dashboard');
       } else {
         setError(result.message);
       }

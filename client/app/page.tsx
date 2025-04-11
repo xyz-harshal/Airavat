@@ -154,7 +154,7 @@ export default function Home() {
               Trusted by developers worldwide
             </h2>
             <p className="max-w-[800px] text-muted-foreground text-lg mx-auto">
-              Here's what our users are saying about their experience with our platform.
+              Here is what our users are saying about their experience with our platform.
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
