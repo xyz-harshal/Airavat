@@ -36,12 +36,9 @@ const navItems = [
     ]
   },
   { 
-    name: "Treatment Planning", 
-    href: "#", 
+    name: "Medical Simulation", 
+    href: "/simulation", 
     icon: Pill,
-    subItems: [
-      { name: "Medication Simulation", href: "/dashboard/services/medication-simulation", icon: Pill },
-    ]
   },
   { name: "Patient Records", href: "/dashboard/patient-records", icon: Users },
   { name: "Analytics", href: "/dashboard/analytics", icon: BarChart2 },

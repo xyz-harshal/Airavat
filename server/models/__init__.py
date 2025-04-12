@@ -1,2 +1,3 @@
 from .userModel import userReqMod,userResMod
-from .patientModel import Patientfrom .chatModel import ChatRequestModel,ChatResponseModel
+from .patientModel import Patient 
+from .chatModel import ChatRequestModel,ChatResponseModel

@@ -2,12 +2,6 @@ curl -X POST -F "file=@path_to_eeg_file.fif" http://127.0.0.1:5000/upload
 
 curl -X POST http://127.0.0.1:5000/train_models
 
-curl -X POST -H "Content-Type: application/json" -d '{
-  "digital_twin": { ... },
-  "intervention": { "type": "anticonvulsant_medication", "target_condition": "epilepsy" }
-}' http://127.0.0.1:5000/simulate_intervention
-
-
 
 curl -X GET "http://127.0.0.1:5000/brain_regions_of_interest?condition=epilepsy"
 

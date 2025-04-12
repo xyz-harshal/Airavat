@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Upload, FileText, AlertCircle, Brain, Activity, UserPlus } from "lucide-react";
 import { createPatient } from "@/app/actions/createPatient";
+import { fetchPatients } from "@/app/actions/patients";
 import { toast } from "sonner";
 
 export default function UploadEEGPage() {
@@ -20,6 +21,7 @@ export default function UploadEEGPage() {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [selectedFiles, setSelectedFiles] = useState([]);
+  const [activeTab, setActiveTab] = useState("register");
   const [patientInfo, setPatientInfo] = useState({
     name: "",
     gender: "",
@@ -32,6 +34,10 @@ export default function UploadEEGPage() {
   const [analysisType, setAnalysisType] = useState("comprehensive");
   const [uid, setUid] = useState(null);
   const [isRegisteringPatient, setIsRegisteringPatient] = useState(false);
+  const [patients, setPatients] = useState([]);
+  const [loadingPatients, setLoadingPatients] = useState(false);
+  const [selectedPatient, setSelectedPatient] = useState(null);
+  const [showPatientList, setShowPatientList] = useState(false);
 
   // Retrieve UID from localStorage on component mount
   useEffect(() => {
@@ -47,10 +53,126 @@ export default function UploadEEGPage() {
     }
   }, [router]);
 
+  // Load patients when tab changes to upload
+  useEffect(() => {
+    if (activeTab === "upload" && uid) {
+      loadPatients();
+    }
+  }, [activeTab, uid]);
+
+  // Function to load patients from the server
+  const loadPatients = async () => {
+    if (!uid) return;
+    
+    setLoadingPatients(true);
+    try {
+      const data = await fetchPatients();
+      if (data && !data.error && data.data) {
+        setPatients(data.data);
+      } else {
+        setPatients([]);
+      }
+    } catch (error) {
+      console.error("Error loading patients:", error);
+      toast.error("Failed to load patients", {
+        description: "Please try again or contact support"
+      });
+      setPatients([]);
+    } finally {
+      setLoadingPatients(false);
+    }
+  };
+
   const handleFileChange = (e) => {
     if (e.target.files) {
       const filesArray = Array.from(e.target.files);
       setSelectedFiles(filesArray);
+    }
+  };
+
+  // Handle patient selection
+  const handlePatientSelect = (patient) => {
+    setSelectedPatient(patient);
+    setShowPatientList(false);
+  };
+
+  // Handle uploading EEG data for selected patient
+  const handleUploadForPatient = async (e) => {
+    e.preventDefault();
+
+    if (!uid) {
+      toast.error("Authentication required", {
+        description: "Please log in to upload EEG data"
+      });
+      return;
+    }
+
+    if (!selectedPatient) {
+      toast.error("No patient selected", {
+        description: "Please select a patient to analyze"
+      });
+      return;
+    }
+
+    if (selectedFiles.length === 0) {
+      toast.error("No files selected", {
+        description: "Please select at least one EEG file to upload"
+      });
+      return;
+    }
+
+    setUploading(true);
+
+    try {
+      // Create a FormData object to send the file
+      const formData = new FormData();
+      formData.append('file', selectedFiles[0]); // Upload the first selected file
+      
+      // Add patient and analysis information to the request
+      // Even though the Flask endpoint is currently only checking for file,
+      // we'll send all the data, which can be accessed in Flask via request.form
+      formData.append('patient_name', selectedPatient.name);
+      formData.append('patient_id', selectedPatient.id);
+      formData.append('analysis_type', analysisType);
+      
+      // Make the request to the Flask server
+      const response = await fetch('http://localhost:5000/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Upload failed: ${response.statusText}`);
+      }
+      
+      const result = await response.json();
+      console.log('Upload result:', result);
+      
+      // Simulate upload progress
+      const interval = setInterval(() => {
+        setUploadProgress((prev) => {
+          const newProgress = prev + 5;
+          if (newProgress >= 100) {
+            clearInterval(interval);
+            setTimeout(() => {
+              toast.success("Upload complete", {
+                description: `EEG data analyzed for ${selectedPatient.name}`
+              });
+              // Navigate to patient records
+              router.push("/dashboard/patient-records");
+            }, 1500);
+            return 100;
+          }
+          return newProgress;
+        });
+      }, 200);
+    } catch (error) {
+      console.error(error);
+      toast.error("Error", {
+        description: error.message || "Failed to upload EEG data"
+      });
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -95,25 +217,15 @@ export default function UploadEEGPage() {
         description: "Patient record has been created successfully"
       });
       
-      // Reset form
-      setPatientInfo({
-        name: "",
-        gender: "",
-        note: "",
-        status: "",
-        age: "",
-        conditions: [],
-        risk: ""
-      });
+      // Switch to the upload tab
+      setActiveTab("upload");
       
-      // Optionally navigate to patient records
-      router.push("/dashboard/patient-records");
+      setIsRegisteringPatient(false);
     } catch (error) {
       console.error(error);
       toast.error("Error", {
         description: error.message || "Failed to register patient"
       });
-    } finally {
       setIsRegisteringPatient(false);
     }
   };
@@ -147,10 +259,9 @@ export default function UploadEEGPage() {
 
     try {
       await createPatient(patientData);
-
-      // If files are selected, simulate upload progress
+      
+      // Simulate upload progress if files are selected
       if (selectedFiles.length > 0) {
-        // Simulate upload progress
         const interval = setInterval(() => {
           setUploadProgress((prev) => {
             const newProgress = prev + 5;
@@ -158,10 +269,10 @@ export default function UploadEEGPage() {
               clearInterval(interval);
               setTimeout(() => {
                 toast.success("Upload complete", {
-                  description: "Patient record created and EEG analysis started"
+                  description: "Patient record created and EEG data uploaded"
                 });
-                // Redirect to analysis page after "processing"
-                router.push("/dashboard/services/brain-analysis");
+                // Navigate directly to patient records
+                router.push("/dashboard/patient-records");
               }, 1500);
               return 100;
             }
@@ -169,7 +280,7 @@ export default function UploadEEGPage() {
           });
         }, 200);
       } else {
-        // If no files, just show success and redirect to patient records
+        // No files, just show success and redirect to patient records
         toast.success("Patient registered", {
           description: "Patient record has been created successfully"
         });
@@ -197,13 +308,16 @@ export default function UploadEEGPage() {
           </div>
         </div>
 
-        <Tabs defaultValue="register" className="w-full">
+        <Tabs 
+          value={activeTab} 
+          onValueChange={setActiveTab} 
+          className="w-full"
+        >
           <TabsList className="grid grid-cols-3 w-full max-w-md">
             <TabsTrigger value="register">Register Patient</TabsTrigger>
             <TabsTrigger value="upload">Upload EEG</TabsTrigger>
             <TabsTrigger value="formats">Supported Formats</TabsTrigger>
           </TabsList>
-
 
           <TabsContent value="register" className="space-y-4 pt-4">
             <div className="max-w-lg mx-auto">
@@ -379,6 +493,71 @@ export default function UploadEEGPage() {
                     )}
                     
                     <div className="space-y-2">
+                      <Label>Select Patient</Label>
+                      <div className="relative">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="w-full justify-between"
+                          onClick={() => setShowPatientList(!showPatientList)}
+                        >
+                          {selectedPatient ? (
+                            <span>{selectedPatient.name}</span>
+                          ) : (
+                            <span className="text-muted-foreground">Select a patient</span>
+                          )}
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className={`h-4 w-4 transition-transform ${
+                              showPatientList ? "rotate-180" : ""
+                            }`}
+                          >
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                          </svg>
+                        </Button>
+                        
+                        {showPatientList && (
+                          <div className="absolute z-10 mt-1 w-full rounded-md border bg-card shadow-lg">
+                            <div className="max-h-60 overflow-auto p-1">
+                              {loadingPatients ? (
+                                <div className="flex items-center justify-center p-4">
+                                  <span className="text-sm text-muted-foreground">Loading patients...</span>
+                                </div>
+                              ) : patients.length === 0 ? (
+                                <div className="flex items-center justify-center p-4">
+                                  <span className="text-sm text-muted-foreground">No patients found</span>
+                                </div>
+                              ) : (
+                                <div className="space-y-1">
+                                  {patients.map((patient) => (
+                                    <button
+                                      key={patient.id}
+                                      type="button"
+                                      className={`w-full rounded-md px-3 py-2 text-left text-sm hover:bg-muted/50 ${
+                                        selectedPatient?.id === patient.id ? "bg-muted" : ""
+                                      }`}
+                                      onClick={() => handlePatientSelect(patient)}
+                                    >
+                                      {patient.name}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
                       <Label>Analysis Type</Label>
                       <Select value={analysisType} onValueChange={setAnalysisType}>
                         <SelectTrigger>
@@ -396,11 +575,11 @@ export default function UploadEEGPage() {
                 </CardContent>
                 <CardFooter>
                   <Button
-                    onClick={handleUpload}
-                    disabled={uploading}
+                    onClick={handleUploadForPatient}
+                    disabled={uploading || !selectedPatient}
                     className="w-full"
                   >
-                    {loading ? (
+                    {uploading ? (
                       <div className="flex items-center">
                         <span className="mr-2">Processing</span>
                         <span>{uploadProgress}%</span>
@@ -408,7 +587,7 @@ export default function UploadEEGPage() {
                     ) : (
                       <div className="flex items-center">
                         <Brain className="mr-2 h-4 w-4" />
-                        <span>Analyze EEG Data</span>
+                        <span>{selectedPatient ? `Analyze EEG for ${selectedPatient.name}` : "Select a patient first"}</span>
                       </div>
                     )}
                   </Button>
@@ -433,7 +612,6 @@ export default function UploadEEGPage() {
               </AlertDescription>
             </Alert>
           </TabsContent>
-          
           
           <TabsContent value="formats" className="pt-4 space-y-4">
             <Card>
@@ -526,17 +704,13 @@ export default function UploadEEGPage() {
         </Tabs>
       </div>
 
-      {response ? (
-        <AnalysisResults response={response} />
-      ) : (
-        <Card className="mt-8">
-          <CardContent>
-            <p className="text-gray-600 text-sm">
-              Our AI system will create a personalized Digital Twin of the Brain based on the EEG data, enabling early detection of neurological conditions and simulation of treatment options.
-            </p>
-          </CardContent>
-        </Card>
-      )}
+      <Card className="mt-8">
+        <CardContent>
+          <p className="text-gray-600 text-sm">
+            Our AI system will create a personalized Digital Twin of the Brain based on the EEG data, enabling early detection of neurological conditions and simulation of treatment options.
+          </p>
+        </CardContent>
+      </Card>
     </DashboardLayout>
   );
 }
