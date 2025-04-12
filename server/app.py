@@ -310,9 +310,9 @@ You inferred:
 Give a short, clinically sound explanation about these results in simple terms. Mention what these probabilities mean and what the person should do next.
 """
 
-        # Make Groq API call
+        # Make Groq API call for AI content
         try:
-            groq_response = requests.post(
+            groq_response_content = requests.post(
                 GROQ_API_URL,
                 headers={
                     "Authorization": f"Bearer {GROQ_API_KEY}",
@@ -328,17 +328,58 @@ Give a short, clinically sound explanation about these results in simple terms. 
                 }
             )
 
-            groq_json = groq_response.json()
-            ai_explanation = groq_json["choices"][0]["message"]["content"].strip()
+            groq_json_content = groq_response_content.json()
+            ai_content = groq_json_content["choices"][0]["message"]["content"].strip()
         except Exception as e:
-            logger.error(f"Groq API call failed: {e}")
-            ai_explanation = "Unable to fetch explanation from AI model."
+            logger.error(f"Groq API call for AI content failed: {e}")
+            ai_content = "Unable to fetch AI content from the model."
+
+        # Make Groq API call for medication advice
+        try:
+            medication_prompt = f"""
+You are a clinical neurologist AI that provides medical advice.
+
+Given:
+- LPD: {predictions[1]}
+- GPD: {predictions[2]}
+- LRDA: {predictions[3]}
+- GRDA: {predictions[4]}
+- Other: {predictions[5]}
+
+Provide detailed advice on:
+- Possible effects of medications and surgical treatments.
+- Which treatments are good or bad for the user.
+- Other clinical and medical recommendations.
+"""
+
+            groq_response_medication = requests.post(
+                GROQ_API_URL,
+                headers={
+                    "Authorization": f"Bearer {GROQ_API_KEY}",
+                    "Content-Type": "application/json"
+                },
+                json={
+                    "model": GROQ_MODEL,
+                    "messages": [
+                        {"role": "system", "content": "You are a neurologist assistant."},
+                        {"role": "user", "content": medication_prompt}
+                    ],
+                    "temperature": 0.7
+                }
+            )
+
+            groq_json_medication = groq_response_medication.json()
+            medication = groq_json_medication["choices"][0]["message"]["content"].strip()
+        except Exception as e:
+            logger.error(f"Groq API call for medication advice failed: {e}")
+            medication = "Unable to fetch medication advice from the model."
 
         # Final response JSON
         return jsonify({
             "raw": raw_data_json,
             "percentage": percentage_data_json,
-            "ai_explanation": ai_explanation
+            "ai_content": ai_content,
+            "medication": medication
         })
 
     finally:
