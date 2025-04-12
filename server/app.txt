@@ -1,0 +1,45 @@
+curl -X POST -F "file=@path_to_eeg_file.fif" http://127.0.0.1:5000/upload
+
+curl -X POST http://127.0.0.1:5000/train_models
+
+curl -X POST -H "Content-Type: application/json" -d '{
+  "digital_twin": { ... },
+  "intervention": { "type": "anticonvulsant_medication", "target_condition": "epilepsy" }
+}' http://127.0.0.1:5000/simulate_intervention
+
+
+
+curl -X GET "http://127.0.0.1:5000/brain_regions_of_interest?condition=epilepsy"
+
+curl -X POST -H "Content-Type: application/json" -d '{
+  "condition_probabilities": { "epilepsy": 0.5, "cognitive_stress": 0.4, "depression": 0.3 }
+}' http://127.0.0.1:5000/recommendations
+
+curl -X POST -H "Content-Type: application/json" -d '{
+  "digital_twin": {
+    "brain_regions": {
+      "frontal": {
+        "F3": { "alpha": 0.5, "beta": 0.3 },
+        "F4": { "alpha": 0.6, "beta": 0.4 }
+      }
+    },
+    "condition_probabilities": {
+      "epilepsy": 0.7,
+      "cognitive_stress": 0.4,
+      "depression": 0.3
+    },
+    "asymmetry_metrics": {
+      "frontal_alpha_asymmetry": 0.1
+    },
+    "biomarkers": {
+      "epilepsy": {
+        "line_length_variability": 0.8
+      }
+    }
+  },
+  "intervention": {
+    "type": "anticonvulsant_medication",
+    "target_condition": "epilepsy"
+  }
+}' http://127.0.0.1:5000/simulate_intervention
+
