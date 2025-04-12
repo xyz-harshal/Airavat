@@ -1,0 +1,400 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Stethoscope, Brain, AlertCircle, PlayCircle, FileBarChart2, Radiation, MousePointer, BarChart, Activity } from "lucide-react";
+
+const SURGICAL_APPROACHES = [
+  { value: "anterior_temporal", label: "Anterior Temporal Lobectomy", appropriate: ["temporal_lobe_epilepsy"] },
+  { value: "selective_amygdalo", label: "Selective Amygdalohippocampectomy", appropriate: ["hippocampal_sclerosis", "mesial_temporal_epilepsy"] },
+  { value: "laser_ablation", label: "Laser Interstitial Thermal Therapy", appropriate: ["focal_epilepsy", "hypothalamic_hamartoma"] },
+  { value: "responsive_neuro", label: "Responsive Neurostimulation", appropriate: ["refractory_epilepsy", "multiple_seizure_foci"] },
+  { value: "deep_brain", label: "Deep Brain Stimulation", appropriate: ["drug_resistant_epilepsy", "lennox_gastaut"] },
+  { value: "corpus_callosotomy", label: "Corpus Callosotomy", appropriate: ["drop_attacks", "lennox_gastaut"] },
+  { value: "vagus_nerve", label: "Vagus Nerve Stimulation", appropriate: ["refractory_epilepsy"] },
+];
+
+const SIMULATION_ACCURACY_CLASSES = {
+  "high": "text-green-500",
+  "medium": "text-amber-500",
+  "low": "text-red-500"
+};
+
+export default function SurgicalSimulation({ patientId, onStartSimulation, onSimulationComplete }) {
+  const [selectedApproach, setSelectedApproach] = useState("");
+  const [targetLocation, setTargetLocation] = useState({ x: 50, y: 50, z: 50 });
+  const [simulationAccuracy, setSimulationAccuracy] = useState("medium");
+  const [useAdvancedSettings, setUseAdvancedSettings] = useState(false);
+  const [simulationParameters, setSimulationParameters] = useState({
+    postOpMedication: true,
+    stimulationFrequency: 130, // Hz, typical for DBS
+    stimulationAmplitude: 2.5, // Volts
+    tissueAffected: "minimal",
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  const [patientCondition, setPatientCondition] = useState(null);
+  
+  // Fetch patient data to determine appropriate surgical approaches
+  useEffect(() => {
+    if (patientId) {
+      // Simulate API call to fetch patient condition
+      const fetchPatientData = async () => {
+        // In a real app, this would be an API call
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Sample data - in production, this would come from your API
+        setPatientCondition({
+          name: "Temporal Lobe Epilepsy",
+          id: "temporal_lobe_epilepsy",
+          seizureFrequency: "Weekly",
+          drugResistant: true,
+          eegFindings: "Right temporal sharp waves",
+          mriFindings: "Right hippocampal sclerosis",
+        });
+      };
+      
+      fetchPatientData();
+    }
+  }, [patientId]);
+
+  // Filter approaches appropriate for patient's condition
+  const appropriateApproaches = patientCondition
+    ? SURGICAL_APPROACHES.filter(approach => 
+        approach.appropriate.includes(patientCondition.id))
+    : [];
+
+  // Handle parameter changes
+  const handleParameterChange = (param, value) => {
+    setSimulationParameters(prev => ({
+      ...prev,
+      [param]: value
+    }));
+  };
+
+  // Handle approach selection
+  const handleApproachSelect = (value) => {
+    setSelectedApproach(value);
+  };
+
+  // Handle location adjustment
+  const handleLocationChange = (axis, value) => {
+    setTargetLocation(prev => ({
+      ...prev,
+      [axis]: value[0]
+    }));
+  };
+
+  // Run the simulation
+  const runSimulation = async () => {
+    if (!selectedApproach) return;
+    
+    setIsLoading(true);
+    onStartSimulation();
+    
+    // In a real app, this would be an API call to your backend
+    // where the digital twin simulation would run
+    try {
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      
+      // Generate sample simulation results
+      // In production, this would come from your AI model
+      const results = generateSampleResults(selectedApproach, patientCondition);
+      
+      onSimulationComplete(results);
+    } catch (error) {
+      console.error("Simulation failed:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Generate sample simulation results
+  const generateSampleResults = (approach, condition) => {
+    // This is just sample data - in production this would be generated by your AI model
+    const effectiveness = Math.random() * 40 + 40; // 40-80% effectiveness
+    const sideEffects = Math.random() * 30; // 0-30% side effects
+    const recoveryTime = Math.floor(Math.random() * 8) + 2; // 2-10 weeks
+    
+    return {
+      procedureName: SURGICAL_APPROACHES.find(a => a.value === approach)?.label,
+      effectiveness: parseFloat(effectiveness.toFixed(1)),
+      sideEffects: parseFloat(sideEffects.toFixed(1)),
+      recoveryTime: recoveryTime,
+      seizureReduction: parseFloat((effectiveness + Math.random() * 15).toFixed(1)),
+      cognitiveImpact: Math.random() > 0.7 ? "Minimal" : "Moderate",
+      successProbability: parseFloat((effectiveness / 100 * 0.9).toFixed(2)),
+      brainRegionsAffected: ["Temporal Lobe", "Hippocampus"],
+      recommendedFollowup: "EEG monitoring at 3 months post-procedure",
+      postOpMedications: simulationParameters.postOpMedication ? 
+        ["Reduced dosage of current AEDs", "Short-term steroids"] : 
+        ["No medication changes recommended"],
+      simulationConfidence: simulationAccuracy
+    };
+  };
+
+  return (
+    <Card className="border-2">
+      <CardHeader className="bg-muted/40">
+        <div className="flex items-center gap-2">
+          <Stethoscope className="h-5 w-5 text-primary" />
+          <CardTitle>Surgical Intervention Simulation</CardTitle>
+        </div>
+        <CardDescription>
+          Simulate surgical approaches using the patient's brain digital twin
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="pt-6 pb-2">
+        {patientCondition ? (
+          <div className="space-y-6">
+            <div className="flex items-center gap-2 mb-2">
+              <Brain className="h-5 w-5 text-primary" />
+              <h3 className="text-lg font-medium">Patient Condition: {patientCondition.name}</h3>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div className="space-y-1.5">
+                <Label className="text-muted-foreground text-sm">Seizure Frequency</Label>
+                <div className="font-medium">{patientCondition.seizureFrequency}</div>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-muted-foreground text-sm">Drug Resistant</Label>
+                <div className="font-medium">{patientCondition.drugResistant ? "Yes" : "No"}</div>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-muted-foreground text-sm">EEG Findings</Label>
+                <div className="font-medium">{patientCondition.eegFindings}</div>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-muted-foreground text-sm">MRI Findings</Label>
+                <div className="font-medium">{patientCondition.mriFindings}</div>
+              </div>
+            </div>
+            
+            {/* Surgical Approach Selection */}
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="surgicalApproach">Surgical Approach</Label>
+                <Select 
+                  value={selectedApproach} 
+                  onValueChange={handleApproachSelect}
+                >
+                  <SelectTrigger id="surgicalApproach">
+                    <SelectValue placeholder="Select surgical approach" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {appropriateApproaches.map((approach) => (
+                      <SelectItem key={approach.value} value={approach.value}>
+                        {approach.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                
+                {appropriateApproaches.length === 0 && (
+                  <div className="flex items-center gap-2 text-amber-500 mt-2">
+                    <AlertCircle className="h-4 w-4" />
+                    <span className="text-sm">No recommended surgical approaches for this condition</span>
+                  </div>
+                )}
+              </div>
+              
+              {/* Target Location - 3D coordinates */}
+              {selectedApproach && (
+                <>
+                  <div className="pt-2 grid grid-cols-1 gap-6">
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center">
+                        <Label>Target Location</Label>
+                        <Badge variant="outline" className="font-normal">
+                          <MousePointer className="h-3 w-3 mr-1" />
+                          X: {targetLocation.x}, Y: {targetLocation.y}, Z: {targetLocation.z}
+                        </Badge>
+                      </div>
+                      
+                      <div className="space-y-5">
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span>X-axis (Lateral)</span>
+                            <span className="text-muted-foreground">Left - Right</span>
+                          </div>
+                          <Slider 
+                            defaultValue={[targetLocation.x]} 
+                            max={100} 
+                            step={1}
+                            onValueChange={(value) => handleLocationChange('x', value)} 
+                          />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span>Y-axis (Anterior-Posterior)</span>
+                            <span className="text-muted-foreground">Front - Back</span>
+                          </div>
+                          <Slider 
+                            defaultValue={[targetLocation.y]} 
+                            max={100} 
+                            step={1}
+                            onValueChange={(value) => handleLocationChange('y', value)} 
+                          />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span>Z-axis (Superior-Inferior)</span>
+                            <span className="text-muted-foreground">Top - Bottom</span>
+                          </div>
+                          <Slider 
+                            defaultValue={[targetLocation.z]} 
+                            max={100} 
+                            step={1}
+                            onValueChange={(value) => handleLocationChange('z', value)}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Advanced Settings Toggle */}
+                  <div className="flex items-center space-x-2 pt-2">
+                    <Switch 
+                      id="advanced-settings"
+                      checked={useAdvancedSettings}
+                      onCheckedChange={setUseAdvancedSettings}
+                    />
+                    <Label htmlFor="advanced-settings">Advanced Settings</Label>
+                  </div>
+                  
+                  {/* Advanced Settings Panel */}
+                  {useAdvancedSettings && (
+                    <div className="bg-muted/30 p-4 rounded-md space-y-4 mt-2">
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="postOpMedication">Post-Op Medication</Label>
+                          <Switch 
+                            id="postOpMedication"
+                            checked={simulationParameters.postOpMedication}
+                            onCheckedChange={(checked) => handleParameterChange('postOpMedication', checked)}
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label>Simulation Accuracy</Label>
+                        <div className="flex gap-4">
+                          <RadioGroup 
+                            defaultValue={simulationAccuracy}
+                            onValueChange={setSimulationAccuracy}
+                            className="flex gap-4"
+                          >
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="low" id="accuracy-low" />
+                              <Label htmlFor="accuracy-low" className="text-red-500">Low (Fast)</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="medium" id="accuracy-medium" />
+                              <Label htmlFor="accuracy-medium" className="text-amber-500">Medium</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="high" id="accuracy-high" />
+                              <Label htmlFor="accuracy-high" className="text-green-500">High (Slow)</Label>
+                            </div>
+                          </RadioGroup>
+                        </div>
+                      </div>
+                      
+                      {/* Conditional fields based on approach type */}
+                      {selectedApproach.includes('stimulation') && (
+                        <>
+                          <div className="space-y-2">
+                            <Label htmlFor="stimulation-frequency">Stimulation Frequency (Hz)</Label>
+                            <div className="flex items-center gap-2">
+                              <Slider 
+                                id="stimulation-frequency"
+                                defaultValue={[simulationParameters.stimulationFrequency]} 
+                                min={60}
+                                max={180} 
+                                step={5}
+                                onValueChange={(value) => handleParameterChange('stimulationFrequency', value[0])} 
+                              />
+                              <span className="w-10 text-right">{simulationParameters.stimulationFrequency}</span>
+                            </div>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <Label htmlFor="stimulation-amplitude">Stimulation Amplitude (V)</Label>
+                            <div className="flex items-center gap-2">
+                              <Slider 
+                                id="stimulation-amplitude"
+                                defaultValue={[simulationParameters.stimulationAmplitude]} 
+                                min={1}
+                                max={5} 
+                                step={0.1}
+                                onValueChange={(value) => handleParameterChange('stimulationAmplitude', value[0])} 
+                              />
+                              <span className="w-10 text-right">{simulationParameters.stimulationAmplitude}</span>
+                            </div>
+                          </div>
+                        </>
+                      )}
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="tissue-affected">Tissue Affected</Label>
+                        <Select 
+                          value={simulationParameters.tissueAffected} 
+                          onValueChange={(value) => handleParameterChange('tissueAffected', value)}
+                        >
+                          <SelectTrigger id="tissue-affected">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="minimal">Minimal</SelectItem>
+                            <SelectItem value="moderate">Moderate</SelectItem>
+                            <SelectItem value="extensive">Extensive</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="text-center py-8">
+            <Activity className="mx-auto h-8 w-8 text-muted-foreground animate-pulse" />
+            <p className="mt-2">Loading patient data...</p>
+          </div>
+        )}
+      </CardContent>
+      <CardFooter className="flex gap-2 justify-end pt-2">
+        <Button 
+          onClick={runSimulation}
+          disabled={!selectedApproach || isLoading}
+          className="gap-2"
+        >
+          {isLoading ? (
+            <>
+              <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full" />
+              Simulating...
+            </>
+          ) : (
+            <>
+              <PlayCircle className="h-4 w-4" />
+              Run Simulation
+            </>
+          )}
+        </Button>
+      </CardFooter>
+    </Card>
+  );
+}
