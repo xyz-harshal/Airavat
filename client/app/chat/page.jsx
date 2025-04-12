@@ -84,9 +84,35 @@ export default function ChatPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const handleSendMessage = (message, attachments = []) => {
+  const sendMessageToBackend = async (message, conversation) => {
+    try {
+      const response = await fetch("http://localhost:8000/chat/chatbot", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          alphaContext: "", // Placeholder for future context
+          conversation: conversation.map(msg => ({ role: msg.role, content: msg.content })),
+          newMessage: message,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch response from backend");
+      }
+
+      const data = await response.json();
+      return data.response;
+    } catch (error) {
+      console.error("Error communicating with backend:", error);
+      return "I'm sorry, I couldn't process your request.";
+    }
+  };
+
+  const handleSendMessage = async (message, attachments = []) => {
     if (!message.trim() && attachments.length === 0) return;
-    
+
     const newUserMessage = {
       id: `msg-${Date.now()}`,
       role: "user",
@@ -94,55 +120,39 @@ export default function ChatPage() {
       attachments: attachments,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
-    
-    // Add user message
+
     const updatedMessages = [...messages, newUserMessage];
     setMessages(updatedMessages);
-    
-    // Simulate AI response after 1 second - neurological health focused
-    setTimeout(() => {
-      // Generate a contextual response for brain health topics
-      let responseContent = "I'm your NeuroAssistant. I'll analyze this information in relation to the patient's EEG data and brain digital twin model.";
-      
-      // Sample contextual responses based on keywords
-      if (message.toLowerCase().includes("epilepsy")) {
-        responseContent = "Based on the EEG patterns I've analyzed, there are temporal lobe irregularities that may indicate epileptiform activity. The digital twin model suggests these patterns have a 78% correlation with focal seizures. Would you like me to generate a detailed report?";
-      } else if (message.toLowerCase().includes("medication") || message.toLowerCase().includes("treatment")) {
-        responseContent = "I've simulated the potential effects of this medication on the patient's brain digital twin. The model predicts a 62% reduction in abnormal activity patterns with minimal side effects. Would you like to see alternative treatment simulations?";
-      } else if (message.toLowerCase().includes("stress") || message.toLowerCase().includes("cognitive")) {
-        responseContent = "The cognitive stress indicators in the patient's EEG show elevated beta wave activity in the prefrontal cortex. The digital twin comparison indicates this is 40% above baseline. I recommend additional assessment for potential anxiety-related factors.";
-      } else if (message.toLowerCase().includes("depression")) {
-        responseContent = "The EEG analysis shows reduced alpha wave activity and hemispheric asymmetry consistent with depression indicators. The digital twin model suggests these patterns have persisted for approximately 3 weeks. Early intervention may be beneficial.";
-      }
-      
-      const aiResponse = {
-        id: `msg-${Date.now()}`,
-        role: "assistant",
-        content: responseContent,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      };
-      setMessages([...updatedMessages, aiResponse]);
-      
-      // Update conversation in the list
-      if (currentConversation) {
-        const updatedConversations = conversations.map(conv => {
-          if (conv.id === currentConversation.id) {
-            return {
-              ...conv,
-              messages: [...updatedMessages, aiResponse],
-              date: "Just now"
-            };
-          }
-          return conv;
-        });
-        
-        setConversations(updatedConversations);
-        setCurrentConversation({
-          ...currentConversation,
-          messages: [...updatedMessages, aiResponse]
-        });
-      }
-    }, 1000);
+
+    const aiResponseContent = await sendMessageToBackend(message, updatedMessages);
+
+    const aiResponse = {
+      id: `msg-${Date.now()}`,
+      role: "assistant",
+      content: aiResponseContent,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+
+    setMessages([...updatedMessages, aiResponse]);
+
+    if (currentConversation) {
+      const updatedConversations = conversations.map(conv => {
+        if (conv.id === currentConversation.id) {
+          return {
+            ...conv,
+            messages: [...updatedMessages, aiResponse],
+            date: "Just now"
+          };
+        }
+        return conv;
+      });
+
+      setConversations(updatedConversations);
+      setCurrentConversation({
+        ...currentConversation,
+        messages: [...updatedMessages, aiResponse]
+      });
+    }
   };
 
   const createNewConversation = () => {
