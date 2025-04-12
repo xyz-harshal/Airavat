@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import DashboardLayout from "@/app/components/dashboard/layout";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,8 +11,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Upload, FileText, AlertCircle, Brain, Activity } from "lucide-react";
-import AnalysisResults from '@/app/dashboard/services/new-feature/AnalysisResults';
+import { Upload, FileText, AlertCircle, Brain, Activity, UserPlus } from "lucide-react";
+import { createPatient } from "@/app/actions/createPatient";
+import { toast } from "sonner";
 
 export default function UploadEEGPage() {
   const router = useRouter();
@@ -20,17 +21,31 @@ export default function UploadEEGPage() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [patientInfo, setPatientInfo] = useState({
-    id: "",
-    firstName: "",
-    lastName: "",
-    age: "",
+    name: "",
     gender: "",
-    notes: ""
+    note: "",
+    status: "",
+    age: "",
+    conditions: [],
+    risk: ""
   });
   const [analysisType, setAnalysisType] = useState("comprehensive");
-  const [response, setResponse] = useState(null);
-  const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [uid, setUid] = useState(null);
+  const [isRegisteringPatient, setIsRegisteringPatient] = useState(false);
+
+  // Retrieve UID from localStorage on component mount
+  useEffect(() => {
+    const userToken = localStorage.getItem('token');
+    if (userToken) {
+      setUid(userToken);
+    } else {
+      // Redirect to login if no token found
+      toast.error("Authentication required", {
+        description: "Please log in to upload EEG data"
+      });
+      router.push("/login");
+    }
+  }, [router]);
 
   const handleFileChange = (e) => {
     if (e.target.files) {
@@ -41,66 +56,132 @@ export default function UploadEEGPage() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setPatientInfo(prev => ({
+    setPatientInfo((prev) => ({
       ...prev,
       [name]: value
     }));
   };
 
-  const handleUpload = async (e) => {
+  const handleRegisterPatient = async (e) => {
     e.preventDefault();
-    
-    if (selectedFiles.length === 0) return;
-    
-    setUploading(true);
-    
-    // Simulate upload progress
-    const interval = setInterval(() => {
-      setUploadProgress(prev => {
-        const newProgress = prev + 5;
-        if (newProgress >= 100) {
-          clearInterval(interval);
-          setTimeout(() => {
-            // Redirect to analysis page after "processing"
-            router.push("/dashboard/services/brain-analysis");
-          }, 1500);
-          return 100;
-        }
-        return newProgress;
-      });
-    }, 200);
-  };
 
-  const handleAnalyze = async () => {
-    if (selectedFiles.length === 0) {
-      setError('Please select a file to upload.');
+    if (!uid) {
+      toast.error("Authentication required", {
+        description: "Please log in to register a patient"
+      });
       return;
     }
 
-    setLoading(true);
-    setError(null);
+    // Validate patient information
+    if (!patientInfo.name || !patientInfo.gender || !patientInfo.status || !patientInfo.risk || !patientInfo.age) {
+      toast.error("Missing information", {
+        description: "Please fill in all required patient information fields"
+      });
+      return;
+    }
 
-    const formData = new FormData();
-    selectedFiles.forEach(file => {
-      formData.append('file', file);
-    });
+    setIsRegisteringPatient(true);
 
     try {
-      const response = await fetch('http://127.0.0.1:5000/upload', {
-        method: 'POST',
-        body: formData,
+      // Convert age to number for backend validation
+      const patientData = {
+        ...patientInfo,
+        age: Number(patientInfo.age),
+        uid
+      };
+
+      await createPatient(patientData);
+      toast.success("Patient registered", {
+        description: "Patient record has been created successfully"
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to upload and analyze the EEG file.');
-      }
-
-      const result = await response.json();
-      setResponse(result);
-    } catch (err) {
-      setError(err.message);
+      
+      // Reset form
+      setPatientInfo({
+        name: "",
+        gender: "",
+        note: "",
+        status: "",
+        age: "",
+        conditions: [],
+        risk: ""
+      });
+      
+      // Optionally navigate to patient records
+      router.push("/dashboard/patient-records");
+    } catch (error) {
+      console.error(error);
+      toast.error("Error", {
+        description: error.message || "Failed to register patient"
+      });
     } finally {
-      setLoading(false);
+      setIsRegisteringPatient(false);
+    }
+  };
+
+  const handleUpload = async (e) => {
+    e.preventDefault();
+
+    if (!uid) {
+      toast.error("Authentication required", {
+        description: "Please log in to upload EEG data"
+      });
+      return;
+    }
+
+    // Validate patient information
+    if (!patientInfo.name || !patientInfo.gender || !patientInfo.status || !patientInfo.risk || !patientInfo.age) {
+      toast.error("Missing information", {
+        description: "Please fill in all required patient information fields"
+      });
+      return;
+    }
+
+    // Convert age to number for backend validation
+    const patientData = {
+      ...patientInfo,
+      age: Number(patientInfo.age),
+      uid
+    };
+
+    setUploading(true);
+
+    try {
+      await createPatient(patientData);
+
+      // If files are selected, simulate upload progress
+      if (selectedFiles.length > 0) {
+        // Simulate upload progress
+        const interval = setInterval(() => {
+          setUploadProgress((prev) => {
+            const newProgress = prev + 5;
+            if (newProgress >= 100) {
+              clearInterval(interval);
+              setTimeout(() => {
+                toast.success("Upload complete", {
+                  description: "Patient record created and EEG analysis started"
+                });
+                // Redirect to analysis page after "processing"
+                router.push("/dashboard/services/brain-analysis");
+              }, 1500);
+              return 100;
+            }
+            return newProgress;
+          });
+        }, 200);
+      } else {
+        // If no files, just show success and redirect to patient records
+        toast.success("Patient registered", {
+          description: "Patient record has been created successfully"
+        });
+        router.push("/dashboard/patient-records");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Error", {
+        description: error.message || "Failed to create patient record"
+      });
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -116,11 +197,136 @@ export default function UploadEEGPage() {
           </div>
         </div>
 
-        <Tabs defaultValue="upload" className="w-full">
-          <TabsList className="grid grid-cols-2 w-full max-w-md">
-            <TabsTrigger value="upload">Upload Files</TabsTrigger>
+        <Tabs defaultValue="register" className="w-full">
+          <TabsList className="grid grid-cols-3 w-full max-w-md">
+            <TabsTrigger value="register">Register Patient</TabsTrigger>
+            <TabsTrigger value="upload">Upload EEG</TabsTrigger>
             <TabsTrigger value="formats">Supported Formats</TabsTrigger>
           </TabsList>
+
+
+          <TabsContent value="register" className="space-y-4 pt-4">
+            <div className="max-w-lg mx-auto">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Register New Patient</CardTitle>
+                  <CardDescription>
+                    Add a new patient to the records without EEG data
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <form className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="register-name">Name</Label>
+                      <Input
+                        id="register-name"
+                        name="name"
+                        value={patientInfo.name}
+                        onChange={handleInputChange}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="register-gender">Gender</Label>
+                      <Select
+                        name="gender"
+                        onValueChange={(value) =>
+                          setPatientInfo((prev) => ({ ...prev, gender: value }))
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select gender" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="male">Male</SelectItem>
+                          <SelectItem value="female">Female</SelectItem>
+                          <SelectItem value="other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="register-note">Clinical Notes</Label>
+                      <Textarea
+                        id="register-note"
+                        name="note"
+                        value={patientInfo.note}
+                        onChange={handleInputChange}
+                        placeholder="Enter any relevant clinical history or notes"
+                        rows={3}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="register-status">Status</Label>
+                      <Select
+                        name="status"
+                        onValueChange={(value) =>
+                          setPatientInfo((prev) => ({ ...prev, status: value }))
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="active">Active</SelectItem>
+                          <SelectItem value="inactive">Inactive</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="register-age">Age</Label>
+                      <Input
+                        id="register-age"
+                        name="age"
+                        type="number"
+                        value={patientInfo.age}
+                        onChange={handleInputChange}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="register-risk">Risk</Label>
+                      <Select
+                        name="risk"
+                        onValueChange={(value) =>
+                          setPatientInfo((prev) => ({ ...prev, risk: value }))
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select risk level" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="low">Low</SelectItem>
+                          <SelectItem value="medium">Medium</SelectItem>
+                          <SelectItem value="high">High</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <Button
+                      onClick={handleRegisterPatient}
+                      disabled={isRegisteringPatient}
+                      className="w-full mt-4"
+                    >
+                      {isRegisteringPatient ? (
+                        <div className="flex items-center">
+                          <span className="mr-2">Registering</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center">
+                          <UserPlus className="mr-2 h-4 w-4" />
+                          <span>Register Patient</span>
+                        </div>
+                      )}
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+          
           <TabsContent value="upload" className="space-y-4 pt-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card>
@@ -188,94 +394,10 @@ export default function UploadEEGPage() {
                     </div>
                   </div>
                 </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Patient Information</CardTitle>
-                  <CardDescription>
-                    Enter patient details for accurate analysis
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <form className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="patientId">Patient ID</Label>
-                        <Input 
-                          id="patientId" 
-                          name="id" 
-                          value={patientInfo.id} 
-                          onChange={handleInputChange} 
-                          placeholder="e.g., PT-12345"
-                        />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="age">Age</Label>
-                        <Input 
-                          id="age" 
-                          name="age" 
-                          type="number" 
-                          value={patientInfo.age} 
-                          onChange={handleInputChange}
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="firstName">First Name</Label>
-                        <Input 
-                          id="firstName" 
-                          name="firstName" 
-                          value={patientInfo.firstName} 
-                          onChange={handleInputChange}
-                        />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="lastName">Last Name</Label>
-                        <Input 
-                          id="lastName" 
-                          name="lastName" 
-                          value={patientInfo.lastName} 
-                          onChange={handleInputChange}
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="gender">Gender</Label>
-                      <Select name="gender" onValueChange={(value) => setPatientInfo(prev => ({...prev, gender: value}))}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select gender" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="male">Male</SelectItem>
-                          <SelectItem value="female">Female</SelectItem>
-                          <SelectItem value="other">Other</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="notes">Clinical Notes</Label>
-                      <Textarea 
-                        id="notes" 
-                        name="notes" 
-                        value={patientInfo.notes} 
-                        onChange={handleInputChange}
-                        placeholder="Enter any relevant clinical history or notes"
-                        rows={3}
-                      />
-                    </div>
-                  </form>
-                </CardContent>
                 <CardFooter>
-                  <Button 
-                    onClick={handleAnalyze} 
-                    disabled={loading || selectedFiles.length === 0}
+                  <Button
+                    onClick={handleUpload}
+                    disabled={uploading}
                     className="w-full"
                   >
                     {loading ? (
@@ -293,7 +415,6 @@ export default function UploadEEGPage() {
                 </CardFooter>
               </Card>
             </div>
-
             {uploading && (
               <div className="w-full bg-muted rounded-full h-2.5 overflow-hidden">
                 <div 
@@ -312,6 +433,7 @@ export default function UploadEEGPage() {
               </AlertDescription>
             </Alert>
           </TabsContent>
+          
           
           <TabsContent value="formats" className="pt-4 space-y-4">
             <Card>

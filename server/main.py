@@ -2,6 +2,7 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routes.userRoute import router as auth_router
+from routes.patientRoute import router as patient_router
 from dotenv import load_dotenv
 from routes.chatRoute import router as chat_router
 
@@ -18,6 +19,7 @@ app.add_middleware(
 )
 
 app.include_router(auth_router, prefix="/user")
+app.include_router(patient_router, prefix="/api")
 app.include_router(chat_router, prefix="/chat")
 
 if __name__ == "__main__":

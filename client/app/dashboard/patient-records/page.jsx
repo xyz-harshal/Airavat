@@ -51,108 +51,7 @@ import {
   Filter as FilterIcon,
   ArrowUpDown
 } from "lucide-react";
-
-// Sample patient data
-const samplePatients = [
-  {
-    id: "PAT-1001",
-    firstName: "John",
-    lastName: "Doe",
-    age: 45,
-    gender: "Male",
-    dateAdded: "2025-03-15",
-    lastEEG: "2025-04-01",
-    condition: "Epilepsy",
-    status: "Active",
-    riskLevel: "Medium",
-    eegCount: 8,
-    nextAppointment: "2025-04-25"
-  },
-  {
-    id: "PAT-1002",
-    firstName: "Emma",
-    lastName: "Wilson",
-    age: 32,
-    gender: "Female",
-    dateAdded: "2025-02-18",
-    lastEEG: "2025-04-05",
-    condition: "Cognitive Stress",
-    status: "Active",
-    riskLevel: "Low",
-    eegCount: 3,
-    nextAppointment: "2025-05-10"
-  },
-  {
-    id: "PAT-1003",
-    firstName: "Robert",
-    lastName: "Johnson",
-    age: 67,
-    gender: "Male",
-    dateAdded: "2024-11-30",
-    lastEEG: "2025-03-25",
-    condition: "Parkinson's",
-    status: "Active",
-    riskLevel: "High",
-    eegCount: 12,
-    nextAppointment: "2025-04-20"
-  },
-  {
-    id: "PAT-1004",
-    firstName: "Sarah",
-    lastName: "Martinez",
-    age: 29,
-    gender: "Female",
-    dateAdded: "2025-01-12",
-    lastEEG: "2025-03-22",
-    condition: "Depression",
-    status: "Active",
-    riskLevel: "Medium",
-    eegCount: 4,
-    nextAppointment: "2025-05-01"
-  },
-  {
-    id: "PAT-1005",
-    firstName: "Michael",
-    lastName: "Brown",
-    age: 52,
-    gender: "Male",
-    dateAdded: "2024-10-05",
-    lastEEG: "2025-03-18",
-    condition: "Epilepsy",
-    status: "Inactive",
-    riskLevel: "Low",
-    eegCount: 10,
-    nextAppointment: null
-  },
-  {
-    id: "PAT-1006",
-    firstName: "Jennifer",
-    lastName: "Garcia",
-    age: 41,
-    gender: "Female",
-    dateAdded: "2025-02-28",
-    lastEEG: "2025-04-10",
-    condition: "Sleep Disorder",
-    status: "Active",
-    riskLevel: "Medium",
-    eegCount: 2,
-    nextAppointment: "2025-04-22"
-  },
-  {
-    id: "PAT-1007",
-    firstName: "David",
-    lastName: "Lee",
-    age: 73,
-    gender: "Male",
-    dateAdded: "2024-12-15",
-    lastEEG: "2025-02-20",
-    condition: "Alzheimer's",
-    status: "Active",
-    riskLevel: "High",
-    eegCount: 8,
-    nextAppointment: "2025-04-18"
-  }
-];
+import { fetchPatients, createPatient } from "@/app/actions/patients";
 
 export default function PatientRecordsPage() {
   const router = useRouter();
@@ -161,17 +60,18 @@ export default function PatientRecordsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [conditionFilter, setConditionFilter] = useState("all");
-  const [sortField, setSortField] = useState("lastEEG");
+  const [sortField, setSortField] = useState("uid");
   const [sortDirection, setSortDirection] = useState("desc");
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [isAddPatientOpen, setIsAddPatientOpen] = useState(false);
   const [newPatient, setNewPatient] = useState({
-    firstName: "",
-    lastName: "",
+    name: "",
     age: "",
     gender: "Male",
-    condition: "",
-    notes: ""
+    note: "",
+    status: "Active",
+    conditions: [],
+    risk: "Not assessed"
   });
 
   useEffect(() => {
@@ -182,11 +82,23 @@ export default function PatientRecordsPage() {
       return;
     }
 
-    // Simulate fetching patients
-    setTimeout(() => {
-      setPatients(samplePatients);
-      setLoading(false);
-    }, 800);
+    // Fetch patients from the server
+    const loadPatients = async () => {
+      try {
+        const response = await fetchPatients();
+        if (!response.error && response.data) {
+          setPatients(response.data);
+        } else {
+          console.error("Error fetching patients:", response.message);
+        }
+      } catch (error) {
+        console.error("Failed to load patients:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadPatients();
   }, [router]);
 
   // Handle sort change
@@ -214,51 +126,57 @@ export default function PatientRecordsPage() {
   };
 
   // Handle new patient form submission
-  const handleAddPatient = (e) => {
+  const handleAddPatient = async (e) => {
     e.preventDefault();
     
-    // Add new patient
-    const newId = `PAT-${1000 + patients.length + 1}`;
-    const today = new Date().toISOString().split('T')[0];
-    
+    // Convert conditions to array if entered as comma-separated string
+    const conditions = typeof newPatient.conditions === 'string' 
+      ? newPatient.conditions.split(',').map(c => c.trim())
+      : newPatient.conditions;
+
+    // Prepare patient data
     const patientToAdd = {
-      id: newId,
-      firstName: newPatient.firstName,
-      lastName: newPatient.lastName,
+      ...newPatient,
       age: parseInt(newPatient.age),
-      gender: newPatient.gender,
-      dateAdded: today,
-      lastEEG: null,
-      condition: newPatient.condition,
-      status: "Active",
-      riskLevel: "Not assessed",
-      eegCount: 0,
-      nextAppointment: null
+      conditions,
+      uid: crypto.randomUUID()
     };
     
-    setPatients([patientToAdd, ...patients]);
-    setIsAddPatientOpen(false);
-    setNewPatient({
-      firstName: "",
-      lastName: "",
-      age: "",
-      gender: "Male",
-      condition: "",
-      notes: ""
-    });
+    try {
+      const response = await createPatient(patientToAdd);
+      if (response && response.data) {
+        setPatients(prev => [response.data[0], ...prev]);
+        setIsAddPatientOpen(false);
+        setNewPatient({
+          name: "",
+          age: "",
+          gender: "Male",
+          note: "",
+          status: "Active",
+          conditions: [],
+          risk: "Not assessed"
+        });
+      }
+    } catch (error) {
+      console.error("Error adding patient:", error);
+    }
   };
 
   // Apply filters and search
   const filteredPatients = patients.filter(patient => {
     const matchesSearch = 
-      patient.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      patient.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      patient.id.toLowerCase().includes(searchTerm.toLowerCase());
+      patient.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      patient.uid?.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesStatus = statusFilter === "all" || patient.status.toLowerCase() === statusFilter.toLowerCase();
-    const matchesCondition = conditionFilter === "all" || (patient.condition && patient.condition.toLowerCase() === conditionFilter.toLowerCase());
+    const matchesStatus = statusFilter === "all" || patient.status?.toLowerCase() === statusFilter.toLowerCase();
     
-    return matchesSearch && matchesStatus && matchesCondition;
+    // Check for conditions as an array
+    const patientConditions = patient.conditions || [];
+    const hasMatchingCondition = conditionFilter === "all" || 
+      (Array.isArray(patientConditions) && 
+       patientConditions.some(c => c.toLowerCase() === conditionFilter.toLowerCase()));
+    
+    return matchesSearch && matchesStatus && hasMatchingCondition;
   });
 
   // Apply sorting
@@ -278,11 +196,12 @@ export default function PatientRecordsPage() {
   });
 
   // Get unique conditions for filter
-  const conditions = ["all", ...new Set(patients.filter(p => p.condition).map(p => p.condition.toLowerCase()))];
+  const allConditions = patients.flatMap(p => p.conditions || []);
+  const conditions = ["all", ...new Set(allConditions.map(c => c.toLowerCase()))];
 
   // Get risk level badge color
   const getRiskBadgeColor = (risk) => {
-    switch(risk.toLowerCase()) {
+    switch(risk?.toLowerCase()) {
       case "high": return "bg-red-100 text-red-800 hover:bg-red-200";
       case "medium": return "bg-amber-100 text-amber-800 hover:bg-amber-200";
       case "low": return "bg-green-100 text-green-800 hover:bg-green-200";
@@ -371,17 +290,17 @@ export default function PatientRecordsPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-[120px]">
-                      <div className="flex items-center cursor-pointer" onClick={() => handleSort("id")}>
+                      <div className="flex items-center cursor-pointer" onClick={() => handleSort("uid")}>
                         Patient ID
-                        {sortField === "id" && (
+                        {sortField === "uid" && (
                           <ArrowUpDown className={`ml-2 h-4 w-4 ${sortDirection === "desc" ? "transform rotate-180" : ""}`} />
                         )}
                       </div>
                     </TableHead>
                     <TableHead>
-                      <div className="flex items-center cursor-pointer" onClick={() => handleSort("lastName")}>
+                      <div className="flex items-center cursor-pointer" onClick={() => handleSort("name")}>
                         Patient Name
-                        {sortField === "lastName" && (
+                        {sortField === "name" && (
                           <ArrowUpDown className={`ml-2 h-4 w-4 ${sortDirection === "desc" ? "transform rotate-180" : ""}`} />
                         )}
                       </div>
@@ -394,15 +313,7 @@ export default function PatientRecordsPage() {
                         )}
                       </div>
                     </TableHead>
-                    <TableHead>Condition</TableHead>
-                    <TableHead>
-                      <div className="flex items-center cursor-pointer" onClick={() => handleSort("lastEEG")}>
-                        Last EEG
-                        {sortField === "lastEEG" && (
-                          <ArrowUpDown className={`ml-2 h-4 w-4 ${sortDirection === "desc" ? "transform rotate-180" : ""}`} />
-                        )}
-                      </div>
-                    </TableHead>
+                    <TableHead>Conditions</TableHead>
                     <TableHead>Risk Level</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
@@ -411,27 +322,26 @@ export default function PatientRecordsPage() {
                 <TableBody>
                   {sortedPatients.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="h-24 text-center">
+                      <TableCell colSpan={7} className="h-24 text-center">
                         No patients found matching your filters
                       </TableCell>
                     </TableRow>
                   ) : (
                     sortedPatients.map((patient) => (
                       <TableRow 
-                        key={patient.id} 
+                        key={patient.uid} 
                         className="cursor-pointer hover:bg-muted/50"
-                        onClick={() => handlePatientSelect(patient)}
                       >
-                        <TableCell className="font-medium">{patient.id}</TableCell>
+                        <TableCell className="font-medium">{patient.uid.substring(0, 8)}</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <Avatar className="h-8 w-8">
                               <AvatarFallback className="text-xs bg-primary/10 text-primary">
-                                {patient.firstName[0]}{patient.lastName[0]}
+                                {patient.name.charAt(0)}
                               </AvatarFallback>
                             </Avatar>
                             <div>
-                              {patient.firstName} {patient.lastName}
+                              {patient.name}
                               <div className="text-xs text-muted-foreground">
                                 {patient.gender}, {patient.age} years
                               </div>
@@ -440,27 +350,21 @@ export default function PatientRecordsPage() {
                         </TableCell>
                         <TableCell>{patient.age}</TableCell>
                         <TableCell>
-                          {patient.condition ? (
-                            <Badge variant="outline">
-                              {patient.condition}
-                            </Badge>
-                          ) : (
-                            <span className="text-muted-foreground text-sm">Not specified</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {patient.lastEEG ? (
-                            <div className="flex items-center gap-1">
-                              <Activity className="h-3 w-3 text-primary" />
-                              <span>{patient.lastEEG}</span>
+                          {patient.conditions && patient.conditions.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {patient.conditions.map((condition, index) => (
+                                <Badge key={index} variant="outline">
+                                  {condition}
+                                </Badge>
+                              ))}
                             </div>
                           ) : (
-                            <span className="text-muted-foreground text-sm">No EEG data</span>
+                            <span className="text-muted-foreground text-sm">None specified</span>
                           )}
                         </TableCell>
                         <TableCell>
-                          <Badge className={getRiskBadgeColor(patient.riskLevel)} variant="secondary">
-                            {patient.riskLevel}
+                          <Badge className={getRiskBadgeColor(patient.risk)} variant="secondary">
+                            {patient.risk}
                           </Badge>
                         </TableCell>
                         <TableCell>
@@ -477,7 +381,7 @@ export default function PatientRecordsPage() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                              <DropdownMenuItem onClick={() => router.push(`/dashboard/services/upload-eeg?patientId=${patient.id}`)}>
+                              <DropdownMenuItem onClick={() => router.push(`/dashboard/services/upload-eeg?patientId=${patient.uid}`)}>
                                 <Activity className="mr-2 h-4 w-4" />
                                 <span>Upload EEG</span>
                               </DropdownMenuItem>
@@ -509,10 +413,10 @@ export default function PatientRecordsPage() {
           <TabsContent value="grid">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {sortedPatients.map(patient => (
-                <Card key={patient.id} className="cursor-pointer hover:border-primary/50 transition-colors" onClick={() => handlePatientSelect(patient)}>
+                <Card key={patient.uid} className="cursor-pointer hover:border-primary/50 transition-colors" onClick={() => handlePatientSelect(patient)}>
                   <CardHeader className="pb-2">
                     <div className="flex items-center justify-between">
-                      <Badge variant="outline">{patient.id}</Badge>
+                      <Badge variant="outline">{patient.uid.substring(0, 8)}</Badge>
                       <Badge variant={patient.status === "Active" ? "default" : "secondary"}>
                         {patient.status}
                       </Badge>
@@ -521,11 +425,11 @@ export default function PatientRecordsPage() {
                     <div className="flex items-center gap-3 pt-2">
                       <Avatar className="h-12 w-12">
                         <AvatarFallback className="bg-primary/10 text-primary">
-                          {patient.firstName[0]}{patient.lastName[0]}
+                          {patient.name.charAt(0)}
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <CardTitle className="text-lg">{patient.firstName} {patient.lastName}</CardTitle>
+                        <CardTitle className="text-lg">{patient.name}</CardTitle>
                         <CardDescription>
                           {patient.gender}, {patient.age} years
                         </CardDescription>
@@ -537,45 +441,37 @@ export default function PatientRecordsPage() {
                       <div className="grid grid-cols-2 text-sm">
                         <div className="flex items-center gap-1 text-muted-foreground">
                           <Brain className="h-3.5 w-3.5" />
-                          <span>Condition:</span>
+                          <span>Conditions:</span>
                         </div>
                         <div className="font-medium">
-                          {patient.condition || "Not specified"}
+                          {patient.conditions && patient.conditions.length > 0 
+                            ? patient.conditions.join(", ") 
+                            : "None specified"}
                         </div>
                       </div>
                       
                       <div className="grid grid-cols-2 text-sm">
                         <div className="flex items-center gap-1 text-muted-foreground">
-                          <Activity className="h-3.5 w-3.5" />
-                          <span>EEGs:</span>
+                          <UserRound className="h-3.5 w-3.5" />
+                          <span>Status:</span>
                         </div>
-                        <div className="font-medium">{patient.eegCount}</div>
+                        <div className="font-medium">{patient.status}</div>
                       </div>
                       
                       <div className="grid grid-cols-2 text-sm">
                         <div className="flex items-center gap-1 text-muted-foreground">
-                          <Clock className="h-3.5 w-3.5" />
-                          <span>Last EEG:</span>
+                          <FileText className="h-3.5 w-3.5" />
+                          <span>Notes:</span>
                         </div>
                         <div className="font-medium">
-                          {patient.lastEEG || "None"}
-                        </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-2 text-sm">
-                        <div className="flex items-center gap-1 text-muted-foreground">
-                          <Calendar className="h-3.5 w-3.5" />
-                          <span>Next Visit:</span>
-                        </div>
-                        <div className="font-medium">
-                          {patient.nextAppointment || "Not scheduled"}
+                          {patient.note || "None"}
                         </div>
                       </div>
                     </div>
                   </CardContent>
                   <CardFooter className="pt-1">
-                    <Badge className={`w-full justify-center ${getRiskBadgeColor(patient.riskLevel)}`} variant="secondary">
-                      {patient.riskLevel} Risk
+                    <Badge className={`w-full justify-center ${getRiskBadgeColor(patient.risk)}`} variant="secondary">
+                      {patient.risk} Risk
                     </Badge>
                   </CardFooter>
                 </Card>
@@ -600,7 +496,7 @@ export default function PatientRecordsPage() {
             <DialogHeader>
               <DialogTitle>Patient Details</DialogTitle>
               <DialogDescription>
-                Detailed information and EEG records
+                Detailed information for {selectedPatient.name}
               </DialogDescription>
             </DialogHeader>
             <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-6">
@@ -609,13 +505,13 @@ export default function PatientRecordsPage() {
                   <div className="flex justify-center">
                     <Avatar className="h-20 w-20">
                       <AvatarFallback className="text-xl bg-primary/10 text-primary">
-                        {selectedPatient.firstName[0]}{selectedPatient.lastName[0]}
+                        {selectedPatient.name.charAt(0)}
                       </AvatarFallback>
                     </Avatar>
                   </div>
                   <div className="text-center pt-2">
-                    <CardTitle>{selectedPatient.firstName} {selectedPatient.lastName}</CardTitle>
-                    <CardDescription>{selectedPatient.id}</CardDescription>
+                    <CardTitle>{selectedPatient.name}</CardTitle>
+                    <CardDescription>{selectedPatient.uid}</CardDescription>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-2">
@@ -632,24 +528,26 @@ export default function PatientRecordsPage() {
                   </div>
                   
                   <div className="flex items-center gap-2 text-sm">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-muted-foreground">Added on:</span>
-                    <span className="font-medium">{selectedPatient.dateAdded}</span>
+                    <Brain className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-muted-foreground">Conditions:</span>
+                    <span className="font-medium">
+                      {selectedPatient.conditions && selectedPatient.conditions.length > 0 
+                        ? selectedPatient.conditions.join(", ") 
+                        : "None specified"}
+                    </span>
                   </div>
                   
-                  {selectedPatient.nextAppointment && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <Calendar className="h-4 w-4 text-primary" />
-                      <span className="text-muted-foreground">Next appointment:</span>
-                      <span className="font-medium">{selectedPatient.nextAppointment}</span>
-                    </div>
-                  )}
+                  <div className="flex items-center gap-2 text-sm">
+                    <FileText className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-muted-foreground">Notes:</span>
+                    <span className="font-medium">{selectedPatient.note || "None"}</span>
+                  </div>
                 </CardContent>
                 <CardFooter className="flex flex-col items-stretch gap-2">
-                  <Badge className={`justify-center ${getRiskBadgeColor(selectedPatient.riskLevel)}`} variant="secondary">
-                    {selectedPatient.riskLevel} Risk Level
+                  <Badge className={`justify-center ${getRiskBadgeColor(selectedPatient.risk)}`} variant="secondary">
+                    {selectedPatient.risk} Risk Level
                   </Badge>
-                  <Button variant="outline" className="w-full" onClick={() => router.push(`/dashboard/services/upload-eeg?patientId=${selectedPatient.id}`)}>
+                  <Button variant="outline" className="w-full" onClick={() => router.push(`/dashboard/services/upload-eeg?patientId=${selectedPatient.uid}`)}>
                     <Activity className="mr-2 h-4 w-4" />
                     Upload New EEG
                   </Button>
@@ -657,140 +555,90 @@ export default function PatientRecordsPage() {
               </Card>
               
               <div className="space-y-4">
-                <Tabs defaultValue="eeg">
-                  <TabsList className="w-full grid grid-cols-3">
-                    <TabsTrigger value="eeg">EEG Records</TabsTrigger>
+                <Tabs defaultValue="details">
+                  <TabsList className="w-full grid grid-cols-2">
+                    <TabsTrigger value="details">Patient Details</TabsTrigger>
                     <TabsTrigger value="twins">Digital Twins</TabsTrigger>
-                    <TabsTrigger value="reports">Reports</TabsTrigger>
                   </TabsList>
                   
-                  <TabsContent value="eeg" className="space-y-4">
-                    <div className="rounded-md border">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Date</TableHead>
-                            <TableHead>Type</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {selectedPatient.eegCount > 0 ? (
-                            Array.from({ length: Math.min(selectedPatient.eegCount, 3) }).map((_, i) => (
-                              <TableRow key={i}>
-                                <TableCell>
-                                  {new Date(new Date(selectedPatient.lastEEG).getTime() - i * 30 * 24 * 60 * 60 * 1000)
-                                    .toISOString().split('T')[0]}
-                                </TableCell>
-                                <TableCell>
-                                  <Badge variant="outline">Standard</Badge>
-                                </TableCell>
-                                <TableCell>
-                                  <Badge variant="default">Analyzed</Badge>
-                                </TableCell>
-                                <TableCell className="text-right">
-                                  <Button variant="ghost" size="icon">
-                                    <ChevronRight className="h-4 w-4" />
-                                  </Button>
-                                </TableCell>
-                              </TableRow>
-                            ))
-                          ) : (
-                            <TableRow>
-                              <TableCell colSpan={4} className="text-center">
-                                <div className="py-4 text-muted-foreground">
-                                  No EEG records found
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          )}
-                        </TableBody>
-                      </Table>
-                    </div>
-                    {selectedPatient.eegCount > 3 && (
-                      <div className="text-center">
-                        <Button variant="link">View all {selectedPatient.eegCount} EEG records</Button>
-                      </div>
-                    )}
+                  <TabsContent value="details" className="space-y-4">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Patient Information</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-2">
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="font-medium">ID:</div>
+                          <div>{selectedPatient.uid}</div>
+                          
+                          <div className="font-medium">Name:</div>
+                          <div>{selectedPatient.name}</div>
+                          
+                          <div className="font-medium">Age:</div>
+                          <div>{selectedPatient.age}</div>
+                          
+                          <div className="font-medium">Gender:</div>
+                          <div>{selectedPatient.gender}</div>
+                          
+                          <div className="font-medium">Status:</div>
+                          <div>
+                            <Badge variant={selectedPatient.status === "Active" ? "default" : "secondary"}>
+                              {selectedPatient.status}
+                            </Badge>
+                          </div>
+                          
+                          <div className="font-medium">Risk Level:</div>
+                          <div>
+                            <Badge className={getRiskBadgeColor(selectedPatient.risk)} variant="secondary">
+                              {selectedPatient.risk}
+                            </Badge>
+                          </div>
+                          
+                          <div className="font-medium">Conditions:</div>
+                          <div>
+                            {selectedPatient.conditions && selectedPatient.conditions.length > 0 ? (
+                              <div className="flex flex-wrap gap-1">
+                                {selectedPatient.conditions.map((condition, index) => (
+                                  <Badge key={index} variant="outline">
+                                    {condition}
+                                  </Badge>
+                                ))}
+                              </div>
+                            ) : (
+                              "None specified"
+                            )}
+                          </div>
+                        </div>
+                        
+                        {selectedPatient.note && (
+                          <div className="mt-4">
+                            <div className="font-medium">Clinical Notes:</div>
+                            <div className="mt-1 p-2 bg-muted rounded-md">
+                              {selectedPatient.note}
+                            </div>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
                   </TabsContent>
                   
                   <TabsContent value="twins">
                     <div className="border rounded-lg p-6 text-center min-h-[180px] flex flex-col items-center justify-center">
-                      {selectedPatient.eegCount > 0 ? (
-                        <div className="space-y-4">
-                          <div className="flex justify-center">
-                            <Brain className="h-12 w-12 text-primary" />
-                          </div>
-                          <div>
-                            <h3 className="font-medium">Brain Digital Twin Available</h3>
-                            <p className="text-sm text-muted-foreground">
-                              Last updated on {selectedPatient.lastEEG}
-                            </p>
-                          </div>
-                          <Button>
-                            View Digital Twin
-                          </Button>
+                      <div className="space-y-4">
+                        <div className="flex justify-center">
+                          <Brain className="h-12 w-12 text-primary" />
                         </div>
-                      ) : (
-                        <div className="space-y-2">
-                          <p className="text-muted-foreground">No digital twin models available</p>
-                          <p className="text-sm text-muted-foreground">Upload EEG data to create a digital twin</p>
+                        <div>
+                          <h3 className="font-medium">Brain Digital Twin</h3>
+                          <p className="text-sm text-muted-foreground">
+                            Upload EEG data to create a digital twin for this patient
+                          </p>
                         </div>
-                      )}
+                        <Button onClick={() => router.push(`/dashboard/services/upload-eeg?patientId=${selectedPatient.uid}`)}>
+                          Upload EEG Data
+                        </Button>
+                      </div>
                     </div>
-                  </TabsContent>
-                  
-                  <TabsContent value="reports" className="space-y-4">
-                    {selectedPatient.eegCount > 0 ? (
-                      <div className="space-y-2">
-                        <Card>
-                          <CardContent className="p-4 flex justify-between items-center">
-                            <div className="flex items-center gap-3">
-                              <FileBarChart2 className="h-8 w-8 text-primary" />
-                              <div>
-                                <h4 className="font-medium">Comprehensive Analysis Report</h4>
-                                <p className="text-sm text-muted-foreground">Generated on {selectedPatient.lastEEG}</p>
-                              </div>
-                            </div>
-                            <Button variant="outline" size="sm">View</Button>
-                          </CardContent>
-                        </Card>
-                        
-                        <Card>
-                          <CardContent className="p-4 flex justify-between items-center">
-                            <div className="flex items-center gap-3">
-                              <Activity className="h-8 w-8 text-primary" />
-                              <div>
-                                <h4 className="font-medium">Longitudinal Comparison</h4>
-                                <p className="text-sm text-muted-foreground">Last 3 EEG sessions</p>
-                              </div>
-                            </div>
-                            <Button variant="outline" size="sm">View</Button>
-                          </CardContent>
-                        </Card>
-                        
-                        {selectedPatient.condition && (
-                          <Card>
-                            <CardContent className="p-4 flex justify-between items-center">
-                              <div className="flex items-center gap-3">
-                                <FileText className="h-8 w-8 text-primary" />
-                                <div>
-                                  <h4 className="font-medium">{selectedPatient.condition} Assessment</h4>
-                                  <p className="text-sm text-muted-foreground">Specialized analysis report</p>
-                                </div>
-                              </div>
-                              <Button variant="outline" size="sm">View</Button>
-                            </CardContent>
-                          </Card>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="text-center py-8 text-muted-foreground">
-                        <p>No reports available</p>
-                        <p className="text-sm">Upload EEG data to generate reports</p>
-                      </div>
-                    )}
                   </TabsContent>
                 </Tabs>
               </div>
@@ -810,28 +658,15 @@ export default function PatientRecordsPage() {
           </DialogHeader>
           
           <form onSubmit={handleAddPatient} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="firstName">First Name</Label>
-                <Input 
-                  id="firstName" 
-                  name="firstName"
-                  value={newPatient.firstName}
-                  onChange={handleNewPatientChange}
-                  required
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="lastName">Last Name</Label>
-                <Input 
-                  id="lastName" 
-                  name="lastName"
-                  value={newPatient.lastName}
-                  onChange={handleNewPatientChange}
-                  required
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="name">Patient Name</Label>
+              <Input 
+                id="name" 
+                name="name"
+                value={newPatient.name}
+                onChange={handleNewPatientChange}
+                required
+              />
             </div>
             
             <div className="grid grid-cols-2 gap-4">
@@ -869,21 +704,39 @@ export default function PatientRecordsPage() {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="condition">Neurological Condition (if known)</Label>
+              <Label htmlFor="conditions">Conditions (comma-separated)</Label>
               <Input 
-                id="condition" 
-                name="condition"
-                value={newPatient.condition}
+                id="conditions" 
+                name="conditions"
+                value={newPatient.conditions}
                 onChange={handleNewPatientChange}
               />
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="notes">Clinical Notes</Label>
+              <Label htmlFor="risk">Risk Level</Label>
+              <Select 
+                value={newPatient.risk} 
+                onValueChange={(value) => setNewPatient(prev => ({ ...prev, risk: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select risk level" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Not assessed">Not assessed</SelectItem>
+                  <SelectItem value="Low">Low</SelectItem>
+                  <SelectItem value="Medium">Medium</SelectItem>
+                  <SelectItem value="High">High</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="note">Clinical Notes</Label>
               <Input 
-                id="notes" 
-                name="notes"
-                value={newPatient.notes}
+                id="note" 
+                name="note"
+                value={newPatient.note}
                 onChange={handleNewPatientChange}
               />
             </div>
