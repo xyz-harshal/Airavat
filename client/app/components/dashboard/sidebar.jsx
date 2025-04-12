@@ -20,6 +20,7 @@ import {
   Bell,
   MessageSquare,
 } from "lucide-react";
+import NewSidebarComponent from './new-sidebar-component';
 
 const navItems = [
   { name: "Dashboard", href: "/dashboard", icon: Home },
@@ -101,6 +102,7 @@ export default function DashboardSidebar() {
             </div>
           );
         })}
+        <NewSidebarComponent />
       </nav>
       
       <div className="px-4 py-4 border-t">

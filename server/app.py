@@ -9,8 +9,12 @@ from sklearn.preprocessing import StandardScaler
 import xgboost as xgb
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.svm import SVC
+from flask_cors import CORS
 
 app = Flask(__name__)
+
+# Enable CORS for the Flask app
+CORS(app, resources={r"/*": {"origins": ["http://localhost:3000"]}}, supports_credentials=True)
 
 # Load models (in a real application, you'd store and load these properly)
 MODEL_DIR = "models"

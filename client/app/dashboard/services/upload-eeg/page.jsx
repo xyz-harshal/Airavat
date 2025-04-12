@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Upload, FileText, AlertCircle, Brain, Activity } from "lucide-react";
+import AnalysisResults from '@/app/dashboard/services/new-feature/AnalysisResults';
 
 export default function UploadEEGPage() {
   const router = useRouter();
@@ -27,6 +28,9 @@ export default function UploadEEGPage() {
     notes: ""
   });
   const [analysisType, setAnalysisType] = useState("comprehensive");
+  const [response, setResponse] = useState(null);
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const handleFileChange = (e) => {
     if (e.target.files) {
@@ -67,6 +71,39 @@ export default function UploadEEGPage() {
     }, 200);
   };
 
+  const handleAnalyze = async () => {
+    if (selectedFiles.length === 0) {
+      setError('Please select a file to upload.');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    const formData = new FormData();
+    selectedFiles.forEach(file => {
+      formData.append('file', file);
+    });
+
+    try {
+      const response = await fetch('http://127.0.0.1:5000/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to upload and analyze the EEG file.');
+      }
+
+      const result = await response.json();
+      setResponse(result);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <DashboardLayout>
       <div className="container mx-auto py-6 space-y-6">
@@ -100,7 +137,7 @@ export default function UploadEEGPage() {
                         type="file" 
                         id="eeg-file" 
                         className="hidden" 
-                        accept=".edf,.bdf,.gdf,.txt,.csv,.set,.nmf" 
+                        accept=".fif" 
                         onChange={handleFileChange}
                         multiple
                       />
@@ -237,11 +274,11 @@ export default function UploadEEGPage() {
                 </CardContent>
                 <CardFooter>
                   <Button 
-                    onClick={handleUpload} 
-                    disabled={uploading || selectedFiles.length === 0}
+                    onClick={handleAnalyze} 
+                    disabled={loading || selectedFiles.length === 0}
                     className="w-full"
                   >
-                    {uploading ? (
+                    {loading ? (
                       <div className="flex items-center">
                         <span className="mr-2">Processing</span>
                         <span>{uploadProgress}%</span>
@@ -366,6 +403,18 @@ export default function UploadEEGPage() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {response ? (
+        <AnalysisResults response={response} />
+      ) : (
+        <Card className="mt-8">
+          <CardContent>
+            <p className="text-gray-600 text-sm">
+              Our AI system will create a personalized Digital Twin of the Brain based on the EEG data, enabling early detection of neurological conditions and simulation of treatment options.
+            </p>
+          </CardContent>
+        </Card>
+      )}
     </DashboardLayout>
   );
 }
