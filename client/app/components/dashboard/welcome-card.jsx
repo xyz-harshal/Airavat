@@ -75,14 +75,6 @@ export default function WelcomeCard({ username }) {
           </div>
         </div>
 
-        <div className="mt-4">
-          <Link href="/dashboard/services">
-            <Button variant="link" className="p-0 h-auto font-normal text-primary">
-              View all neurological analysis tools
-              <ArrowRight className="ml-1 h-3 w-3" />
-            </Button>
-          </Link>
-        </div>
       </CardContent>
     </Card>
   );

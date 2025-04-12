@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import DashboardLayout from "@/app/components/dashboard/layout";
 import WelcomeCard from "@/app/components/dashboard/welcome-card";
 import StatisticsPanel from "@/app/components/dashboard/statistics-panel";
-import RecentActivity from "@/app/components/dashboard/recent-activity";
 import ServiceCards from "@/app/components/dashboard/service-cards";
 
 export default function Dashboard() {
@@ -56,14 +55,8 @@ export default function Dashboard() {
           </div>
         </div>
         
-        <h2 className="text-2xl font-bold mt-6">AI Services</h2>
-        <div className="w-full overflow-x-auto">
-          <ServiceCards />
-        </div>
         
-        <div className="mt-6">
-          <RecentActivity />
-        </div>
+       
       </div>
     </DashboardLayout>
   );

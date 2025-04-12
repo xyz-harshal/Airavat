@@ -28,46 +28,6 @@ const services = [
   },
   {
     id: 2,
-    name: "Brain Analysis Dashboard",
-    description: "View comprehensive analysis of brain activity patterns with personalized insights.",
-    icon: Brain,
-    iconColor: "text-purple-500",
-    iconBg: "bg-purple-500/10",
-    status: "Available",
-    link: "/dashboard/services/brain-analysis"
-  },
-  {
-    id: 3,
-    name: "Epilepsy Detection",
-    description: "Identify patterns that may indicate early signs of epilepsy or seizure disorders.",
-    icon: Activity,
-    iconColor: "text-red-500",
-    iconBg: "bg-red-500/10",
-    status: "Available",
-    link: "/dashboard/services/epilepsy-detection"
-  },
-  {
-    id: 4,
-    name: "Cognitive Stress Analysis",
-    description: "Measure and track cognitive stress levels with detailed brain activity metrics.",
-    icon: LineChart,
-    iconColor: "text-amber-500",
-    iconBg: "bg-amber-500/10",
-    status: "Available",
-    link: "/dashboard/services/cognitive-analysis"
-  },
-  {
-    id: 5,
-    name: "Depression Indicators",
-    description: "Detect neural patterns associated with depression for early intervention.",
-    icon: FilePlus2,
-    iconColor: "text-green-500",
-    iconBg: "bg-green-500/10",
-    status: "Available",
-    link: "/dashboard/services/depression-indicators"
-  },
-  {
-    id: 6,
     name: "Medication Simulation",
     description: "Model the potential effects of medications on the patient's brain activity.",
     icon: Pill,
@@ -77,7 +37,7 @@ const services = [
     link: "/dashboard/services/medication-simulation"
   },
   {
-    id: 7,
+    id: 3,
     name: "Surgical Intervention Planning",
     description: "Support clinical decision-making for surgical interventions with brain simulations.",
     icon: Scalpel,
@@ -87,7 +47,7 @@ const services = [
     link: "/dashboard/services/surgical-planning"
   },
   {
-    id: 8,
+    id: 4,
     name: "Patient History",
     description: "Access historical EEG data and track changes in brain activity over time.",
     icon: History,

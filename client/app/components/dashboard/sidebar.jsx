@@ -31,9 +31,7 @@ const navItems = [
     subItems: [
       { name: "Upload EEG Data", href: "/dashboard/services/upload-eeg", icon: Upload },
       { name: "Brain Analysis", href: "/dashboard/services/brain-analysis", icon: Microscope },
-      { name: "Epilepsy Detection", href: "/dashboard/services/epilepsy-detection", icon: Activity },
-      { name: "Cognitive Stress", href: "/dashboard/services/cognitive-analysis", icon: LineChart },
-      { name: "Depression Indicators", href: "/dashboard/services/depression-indicators", icon: FilePlus2 },
+      
     ]
   },
   { 
@@ -42,13 +40,10 @@ const navItems = [
     icon: Pill,
     subItems: [
       { name: "Medication Simulation", href: "/dashboard/services/medication-simulation", icon: Pill },
-      { name: "Surgical Planning", href: "/dashboard/services/surgical-planning", icon: Scalpel },
     ]
   },
   { name: "Patient Records", href: "/dashboard/patient-records", icon: Users },
-  { name: "Historical Data", href: "/dashboard/services/patient-history", icon: History },
   { name: "Analytics", href: "/dashboard/analytics", icon: BarChart2 },
-  { name: "Reports", href: "/dashboard/reports", icon: FileBarChart2 },
   { name: "Notifications", href: "/dashboard/notifications", icon: Bell },
   { name: "Settings", href: "/dashboard/settings", icon: Settings },
 ];

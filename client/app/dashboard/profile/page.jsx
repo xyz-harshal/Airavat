@@ -136,10 +136,10 @@ export default function ProfilePage() {
         )}
 
         <Tabs defaultValue="profile" className="w-full">
-          <TabsList className="grid grid-cols-3 max-w-xl">
+          <TabsList className="grid grid-cols-3 w-full">
             <TabsTrigger value="profile">Personal Info</TabsTrigger>
             <TabsTrigger value="professional">Clinical Credentials</TabsTrigger>
-            <TabsTrigger value="preferences">EEG Analysis Preferences</TabsTrigger>
+            
           </TabsList>
           
           {/* Personal Information Tab */}
@@ -429,125 +429,6 @@ export default function ProfilePage() {
             </Card>
           </TabsContent>
           
-          {/* EEG Analysis Preferences Tab */}
-          <TabsContent value="preferences">
-            <Card>
-              <CardHeader>
-                <CardTitle>EEG Analysis Preferences</CardTitle>
-                <CardDescription>
-                  Customize your Digital Twin of the Brain analysis settings
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form className="space-y-6">
-                  <div className="space-y-4">
-                    <h3 className="font-medium">Default Analysis Settings</h3>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="eegMontage">Default EEG Montage</Label>
-                        <Select defaultValue="bipolar">
-                          <SelectTrigger id="eegMontage">
-                            <SelectValue placeholder="Select montage" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="bipolar">Bipolar</SelectItem>
-                            <SelectItem value="referential">Referential</SelectItem>
-                            <SelectItem value="average">Average Reference</SelectItem>
-                            <SelectItem value="laplacian">Laplacian</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="frequencyBands">Default Frequency Bands</Label>
-                        <Select defaultValue="standard">
-                          <SelectTrigger id="frequencyBands">
-                            <SelectValue placeholder="Select frequency bands" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="standard">Standard (Delta, Theta, Alpha, Beta, Gamma)</SelectItem>
-                            <SelectItem value="extended">Extended (Includes High Gamma)</SelectItem>
-                            <SelectItem value="custom">Custom Bands</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="artefactRemoval">Artefact Removal</Label>
-                        <Select defaultValue="automatic">
-                          <SelectTrigger id="artefactRemoval">
-                            <SelectValue placeholder="Select artefact removal method" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="automatic">Automatic</SelectItem>
-                            <SelectItem value="manual">Manual Review</SelectItem>
-                            <SelectItem value="hybrid">Hybrid (Auto + Confirmation)</SelectItem>
-                            <SelectItem value="none">None</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="reportDetail">Report Detail Level</Label>
-                        <Select defaultValue="comprehensive">
-                          <SelectTrigger id="reportDetail">
-                            <SelectValue placeholder="Select report detail level" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="summary">Summary</SelectItem>
-                            <SelectItem value="standard">Standard</SelectItem>
-                            <SelectItem value="comprehensive">Comprehensive</SelectItem>
-                            <SelectItem value="research">Research Grade</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                    
-                    <div className="pt-4">
-                      <h3 className="font-medium mb-2">Digital Twin Simulation Preferences</h3>
-                      
-                      <div className="space-y-4 bg-muted/10 p-4 rounded-md">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="simulationComplexity">Simulation Complexity</Label>
-                            <Select defaultValue="high">
-                              <SelectTrigger id="simulationComplexity">
-                                <SelectValue placeholder="Select complexity" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="low">Low (Faster Processing)</SelectItem>
-                                <SelectItem value="medium">Medium</SelectItem>
-                                <SelectItem value="high">High (Detailed Analysis)</SelectItem>
-                                <SelectItem value="research">Research Grade</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          
-                          <div className="space-y-2">
-                            <Label htmlFor="modelingApproach">Modeling Approach</Label>
-                            <Select defaultValue="dynamic">
-                              <SelectTrigger id="modelingApproach">
-                                <SelectValue placeholder="Select approach" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="static">Static (Single State)</SelectItem>
-                                <SelectItem value="dynamic">Dynamic (Multiple States)</SelectItem>
-                                <SelectItem value="adaptive">Adaptive (Learning)</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                  </div>
-                  
-                  <Button type="submit">Save Preferences</Button>
-                </form>
-              </CardContent>
-            </Card>
-          </TabsContent>
         </Tabs>
       </div>
     </DashboardLayout>
