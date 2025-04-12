@@ -4,7 +4,11 @@ import {
   Paperclip, 
   Mic, 
   Image as ImageIcon, 
-  File, 
+  File,
+  Activity,
+  Brain, 
+  UserSquare,
+  FileBarChart2,
   X,
   Loader2
 } from "lucide-react";
@@ -65,16 +69,64 @@ export default function ChatInput({ onSendMessage }) {
     setAttachments(attachments.filter(attachment => attachment.id !== id));
   };
   
+  // Added specialized attachment handlers for EEG data
+  const handleEEGAttachment = () => {
+    // Set specific file types for EEG data
+    fileInputRef.current.accept = ".edf,.bdf,.gdf,.csv,.set,.txt";
+    fileInputRef.current.click();
+  };
+
+  const handlePatientRecord = () => {
+    // Simulating patient record attachment
+    const patientRecord = {
+      id: `patient-${Date.now()}`,
+      name: `Patient Record #${Math.floor(1000 + Math.random() * 9000)}`,
+      type: "patient-record",
+      recordType: "Patient EEG History",
+      url: "#"
+    };
+    
+    setAttachments([...attachments, patientRecord]);
+  };
+  
+  const handleDigitalTwin = () => {
+    // Simulating digital twin model attachment
+    const twinModel = {
+      id: `twin-${Date.now()}`,
+      name: `Brain Digital Twin Model #${Math.floor(1000 + Math.random() * 9000)}`,
+      type: "brain-model",
+      modelType: "Digital Twin Simulation",
+      url: "#"
+    };
+    
+    setAttachments([...attachments, twinModel]);
+  };
+
   return (
     <div className="w-full mb-0">
       {/* Attachments preview */}
       {attachments.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-3">
-          {attachments.map(attachment => (
-            <div 
-              key={attachment.id} 
-              className="group relative bg-muted p-2 rounded-md flex items-center gap-2 pr-8"
-            >
+          {attachments.map(attachment => {
+            // Select icon based on attachment type
+            let AttachmentIcon = File;
+            if (attachment.type?.startsWith('image')) {
+              AttachmentIcon = ImageIcon;
+            } else if (attachment.type === 'patient-record') {
+              AttachmentIcon = UserSquare;
+            } else if (attachment.type === 'brain-model') {
+              AttachmentIcon = Brain;
+            } else if (attachment.name?.endsWith('.edf') || 
+                      attachment.name?.endsWith('.bdf') ||
+                      attachment.name?.endsWith('.gdf')) {
+              AttachmentIcon = Activity;
+            }
+            
+            return (
+              <div 
+                key={attachment.id} 
+                className="group relative bg-muted p-2 rounded-md flex items-center gap-2 pr-8"
+              >
               {attachment.type.startsWith('image/') ? (
                 <ImageIcon className="h-4 w-4 text-blue-500" />
               ) : (
@@ -88,7 +140,8 @@ export default function ChatInput({ onSendMessage }) {
                 <X className="h-3 w-3" />
               </button>
             </div>
-          ))}
+            );
+          })}
           
           {isUploading && (
             <div className="bg-muted p-2 rounded-md flex items-center gap-2">
@@ -110,7 +163,67 @@ export default function ChatInput({ onSendMessage }) {
         />
         
         <div className="absolute right-2 bottom-2 flex gap-1">
-          {/* Attachment button */}
+          {/* EEG Data Attachment */}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-8 w-8 rounded-full"
+                  onClick={handleEEGAttachment}
+                  disabled={isUploading}
+                >
+                  <Activity className="h-5 w-5 text-primary" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Attach EEG data</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
+          {/* Patient Record Attachment */}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-8 w-8 rounded-full"
+                  onClick={handlePatientRecord}
+                  disabled={isUploading}
+                >
+                  <UserSquare className="h-5 w-5 text-blue-500" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Attach patient record</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
+          {/* Brain Digital Twin Model */}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-8 w-8 rounded-full"
+                  onClick={handleDigitalTwin}
+                  disabled={isUploading}
+                >
+                  <Brain className="h-5 w-5 text-purple-500" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Attach brain digital twin model</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          
+          {/* Regular File Attachment */}
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -125,7 +238,7 @@ export default function ChatInput({ onSendMessage }) {
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Attach a file</p>
+                <p>Attach other file</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>

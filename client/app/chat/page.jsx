@@ -10,43 +10,43 @@ import { Button } from "@/components/ui/button";
 import { Loader2, Plus, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
-// Sample data for multiple conversations
+// Sample data for multiple conversations with neurological health focus
 const sampleConversations = [
   {
     id: "1",
-    title: "AI Assistant Help",
+    title: "EEG Analysis Assistance",
     date: "Just now",
     messages: [
       {
         id: "msg1",
         role: "assistant",
-        content: "Hello! How can I help you today?",
+        content: "Hello Dr. I'm your NeuroAssistant. I can help interpret EEG patterns, provide insights into neurological conditions, and support your clinical decision-making. What would you like to discuss today?",
         timestamp: "2:30 PM"
       }
     ]
   },
   {
     id: "2",
-    title: "Project Planning",
+    title: "Epilepsy Case Review",
     date: "Yesterday",
     messages: [
       {
         id: "msg2",
         role: "assistant",
-        content: "Welcome back! Let's continue planning your project.",
+        content: "I've analyzed the patterns in patient #7156's EEG data. The temporal lobe readings show characteristics consistent with focal epilepsy. Would you like me to compare with previous scans?",
         timestamp: "5:45 PM"
       }
     ]
   },
   {
     id: "3",
-    title: "Code Review",
+    title: "Medication Simulation",
     date: "2 days ago",
     messages: [
       {
         id: "msg3",
         role: "assistant",
-        content: "I can help you review your React code. What specific issues are you facing?",
+        content: "Based on the digital twin simulation, a reduced dosage of 150mg might maintain efficacy while minimizing side effects. The frequency patterns suggest positive response.",
         timestamp: "11:20 AM"
       }
     ]
@@ -99,12 +99,26 @@ export default function ChatPage() {
     const updatedMessages = [...messages, newUserMessage];
     setMessages(updatedMessages);
     
-    // Simulate AI response after 1 second
+    // Simulate AI response after 1 second - neurological health focused
     setTimeout(() => {
+      // Generate a contextual response for brain health topics
+      let responseContent = "I'm your NeuroAssistant. I'll analyze this information in relation to the patient's EEG data and brain digital twin model.";
+      
+      // Sample contextual responses based on keywords
+      if (message.toLowerCase().includes("epilepsy")) {
+        responseContent = "Based on the EEG patterns I've analyzed, there are temporal lobe irregularities that may indicate epileptiform activity. The digital twin model suggests these patterns have a 78% correlation with focal seizures. Would you like me to generate a detailed report?";
+      } else if (message.toLowerCase().includes("medication") || message.toLowerCase().includes("treatment")) {
+        responseContent = "I've simulated the potential effects of this medication on the patient's brain digital twin. The model predicts a 62% reduction in abnormal activity patterns with minimal side effects. Would you like to see alternative treatment simulations?";
+      } else if (message.toLowerCase().includes("stress") || message.toLowerCase().includes("cognitive")) {
+        responseContent = "The cognitive stress indicators in the patient's EEG show elevated beta wave activity in the prefrontal cortex. The digital twin comparison indicates this is 40% above baseline. I recommend additional assessment for potential anxiety-related factors.";
+      } else if (message.toLowerCase().includes("depression")) {
+        responseContent = "The EEG analysis shows reduced alpha wave activity and hemispheric asymmetry consistent with depression indicators. The digital twin model suggests these patterns have persisted for approximately 3 weeks. Early intervention may be beneficial.";
+      }
+      
       const aiResponse = {
         id: `msg-${Date.now()}`,
         role: "assistant",
-        content: "I'm an AI assistant. This is a placeholder response. The actual integration with your AI backend will replace this message.",
+        content: responseContent,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
       setMessages([...updatedMessages, aiResponse]);

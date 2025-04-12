@@ -1,105 +1,134 @@
+import React from "react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, Image as ImageIcon, FileText, Code, Sparkles, ArrowRight } from "lucide-react";
+import { 
+  Upload, 
+  Brain, 
+  Activity, 
+  LineChart, 
+  FilePlus2, 
+  History, 
+  ArrowRight, 
+  Pill, 
+  Scalpel
+} from "lucide-react";
 import Link from "next/link";
 
 const services = [
   {
     id: 1,
-    name: "AI Chat Assistant",
-    description: "Interact with an AI assistant for help with various tasks, answering questions, and more.",
-    icon: MessageSquare,
+    name: "Upload EEG Data",
+    description: "Upload EEG reports for AI analysis and create a personalized Digital Twin of the Brain.",
+    icon: Upload,
     iconColor: "text-blue-500",
     iconBg: "bg-blue-500/10",
-    status: "Available",
-    link: "/dashboard/services/chat"
+    status: "Primary",
+    link: "/dashboard/services/upload-eeg"
   },
   {
     id: 2,
-    name: "Image Generation",
-    description: "Create unique, realistic images from text descriptions for your projects.",
-    icon: ImageIcon,
+    name: "Brain Analysis Dashboard",
+    description: "View comprehensive analysis of brain activity patterns with personalized insights.",
+    icon: Brain,
     iconColor: "text-purple-500",
     iconBg: "bg-purple-500/10",
     status: "Available",
-    link: "/dashboard/services/image"
+    link: "/dashboard/services/brain-analysis"
   },
   {
     id: 3,
-    name: "Text Generation",
-    description: "Generate high-quality content like articles, stories, and product descriptions.",
-    icon: FileText,
-    iconColor: "text-green-500",
-    iconBg: "bg-green-500/10",
+    name: "Epilepsy Detection",
+    description: "Identify patterns that may indicate early signs of epilepsy or seizure disorders.",
+    icon: Activity,
+    iconColor: "text-red-500",
+    iconBg: "bg-red-500/10",
     status: "Available",
-    link: "/dashboard/services/text"
+    link: "/dashboard/services/epilepsy-detection"
   },
   {
     id: 4,
-    name: "Code Assistant",
-    description: "Get help writing, explaining, and refactoring code across multiple programming languages.",
-    icon: Code,
+    name: "Cognitive Stress Analysis",
+    description: "Measure and track cognitive stress levels with detailed brain activity metrics.",
+    icon: LineChart,
     iconColor: "text-amber-500",
     iconBg: "bg-amber-500/10",
     status: "Available",
-    link: "/dashboard/services/code"
+    link: "/dashboard/services/cognitive-analysis"
   },
   {
     id: 5,
-    name: "AI Workflow Automation",
-    description: "Build automated workflows powered by AI to streamline your business processes.",
-    icon: Sparkles,
-    iconColor: "text-pink-500",
-    iconBg: "bg-pink-500/10",
-    status: "Coming Soon",
-    link: "#"
+    name: "Depression Indicators",
+    description: "Detect neural patterns associated with depression for early intervention.",
+    icon: FilePlus2,
+    iconColor: "text-green-500",
+    iconBg: "bg-green-500/10",
+    status: "Available",
+    link: "/dashboard/services/depression-indicators"
   },
+  {
+    id: 6,
+    name: "Medication Simulation",
+    description: "Model the potential effects of medications on the patient's brain activity.",
+    icon: Pill,
+    iconColor: "text-cyan-500",
+    iconBg: "bg-cyan-500/10",
+    status: "Available",
+    link: "/dashboard/services/medication-simulation"
+  },
+  {
+    id: 7,
+    name: "Surgical Intervention Planning",
+    description: "Support clinical decision-making for surgical interventions with brain simulations.",
+    icon: Scalpel,
+    iconColor: "text-indigo-500",
+    iconBg: "bg-indigo-500/10",
+    status: "Available",
+    link: "/dashboard/services/surgical-planning"
+  },
+  {
+    id: 8,
+    name: "Patient History",
+    description: "Access historical EEG data and track changes in brain activity over time.",
+    icon: History,
+    iconColor: "text-teal-500",
+    iconBg: "bg-teal-500/10",
+    status: "Available",
+    link: "/dashboard/services/patient-history"
+  }
 ];
 
 export default function ServiceCards() {
   return (
-    // Improve grid responsiveness with explicit breakpoints
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
-      {services.map((service) => {
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      {services.map(service => {
         const IconComponent = service.icon;
-        const isComingSoon = service.status === "Coming Soon";
         
         return (
-          <Card key={service.id} className="overflow-hidden h-full flex flex-col">
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <div className={`p-2 rounded-md ${service.iconBg}`}>
-                  <IconComponent className={`h-5 w-5 ${service.iconColor}`} />
+          <Card key={service.id} className="flex flex-col overflow-hidden border border-muted/30">
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2">
+                <div className={`w-8 h-8 rounded-full ${service.iconBg} flex items-center justify-center`}>
+                  {IconComponent && <IconComponent className={`w-4 h-4 ${service.iconColor}`} />}
                 </div>
-                <Badge 
-                  variant="outline" 
-                  className={`
-                    ${isComingSoon 
-                      ? 'bg-amber-500/10 text-amber-500' 
-                      : 'bg-green-500/10 text-green-500'
-                    }
-                  `}
-                >
-                  {service.status}
-                </Badge>
+                <CardTitle className="text-lg font-semibold">{service.name}</CardTitle>
               </div>
-              <CardTitle className="mt-4 text-lg sm:text-xl">{service.name}</CardTitle>
+              {service.status === "Primary" && (
+                <Badge className="absolute top-3 right-3 bg-primary text-white">
+                  Primary
+                </Badge>
+              )}
             </CardHeader>
-            <CardContent className="flex-grow">
+            <CardContent className="flex-1 pb-4">
               <p className="text-sm text-muted-foreground">
                 {service.description}
               </p>
             </CardContent>
-            <CardFooter>
+            <CardFooter className="pt-0">
               <Link href={service.link} className="w-full">
-                <Button 
-                  variant={isComingSoon ? "outline" : "default"}
-                  className="w-full" 
-                  disabled={isComingSoon}
-                >
-                  {isComingSoon ? "Coming Soon" : "Launch"} 
-                  <ArrowRight className="ml-2 h-4 w-4" />
+                <Button variant="outline" className="w-full group">
+                  <span>Access Tool</span>
+                  <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </Link>
             </CardFooter>

@@ -23,7 +23,7 @@ import Link from "next/link";
 
 export default function ChatHeader({ conversation, onToggleSidebar, onNewChat }) {
   const [isEditing, setIsEditing] = useState(false);
-  const [title, setTitle] = useState(conversation?.title || "New Conversation");
+  const [title, setTitle] = useState(conversation?.title || "New NeuroAssistant Session");
   
   const handleTitleChange = (e) => {
     setTitle(e.target.value);

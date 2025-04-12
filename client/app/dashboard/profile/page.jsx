@@ -12,7 +12,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { User, Mail, Phone, MapPin, Briefcase, Calendar, AlertCircle, Camera } from "lucide-react";
+import { 
+  User, Mail, Phone, MapPin, Briefcase, Calendar, AlertCircle, Camera,
+  GraduationCap, Building2, FileCheck, Brain, Activity, Award, BookOpen
+} from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -23,9 +27,15 @@ export default function ProfilePage() {
     bio: "",
     phone: "",
     location: "",
-    company: "",
+    hospital: "",
+    department: "Neurology",
+    position: "Neurologist",
+    specialization: "Clinical Neurophysiology",
+    licenseNumber: "ML-54321",
+    yearsOfExperience: "12",
+    education: "MD, Neurology",
     joinDate: "January 2023",
-    plan: "Pro",
+    plan: "Clinical Pro",
     avatar: ""
   });
   const [loading, setLoading] = useState(true);
@@ -47,8 +57,8 @@ export default function ProfilePage() {
     setUser(prev => ({
       ...prev,
       username,
-      email: `${username}@example.com`,
-      fullName: username.charAt(0).toUpperCase() + username.slice(1) + " Smith"
+      email: `dr.${username}@neurohospital.org`,
+      fullName: "Dr. " + username.charAt(0).toUpperCase() + username.slice(1) + " Harrison"
     }));
     
     setLoading(false);
@@ -56,6 +66,13 @@ export default function ProfilePage() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    setUser(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSelectChange = (name, value) => {
     setUser(prev => ({
       ...prev,
       [name]: value
@@ -73,7 +90,7 @@ export default function ProfilePage() {
       
       setNotification({
         type: 'success',
-        message: 'Profile updated successfully!'
+        message: 'Clinical profile updated successfully!'
       });
       
       // Clear notification after 3 seconds
@@ -89,7 +106,7 @@ export default function ProfilePage() {
   };
 
   const getInitials = (name) => {
-    if (!name) return "U";
+    if (!name) return "Dr";
     return name.split(" ").map(n => n[0]).join("").toUpperCase();
   };
 
@@ -103,180 +120,435 @@ export default function ProfilePage() {
 
   return (
     <DashboardLayout>
-      <div className="grid gap-6">
-        <div>
-          <h1 className="text-3xl font-bold">My Profile</h1>
-          <p className="text-muted-foreground mt-2">
-            Manage your account information and preferences
-          </p>
+      <div className="container mx-auto py-6 space-y-6">
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-bold">Clinician Profile</h1>
         </div>
 
         {notification && (
-          <Alert className={`${notification.type === 'success' ? 'bg-green-500/10 text-green-500' : 'bg-destructive/10 text-destructive'}`}>
+          <Alert className={notification.type === 'error' ? 'bg-destructive/10 text-destructive border-destructive/30' : 'bg-primary/10 text-primary border-primary/30'}>
             <AlertCircle className="h-4 w-4" />
-            <AlertTitle>{notification.type === 'success' ? 'Success' : 'Error'}</AlertTitle>
-            <AlertDescription>{notification.message}</AlertDescription>
+            <AlertTitle>{notification.type === 'error' ? 'Error' : 'Success'}</AlertTitle>
+            <AlertDescription>
+              {notification.message}
+            </AlertDescription>
           </Alert>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Profile Summary Card */}
-          <Card className="lg:col-span-1">
-            <CardHeader>
-              <CardTitle>Profile Summary</CardTitle>
-              <CardDescription>Your public information</CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col items-center">
-              <div className="relative mb-6">
-                <Avatar className="h-24 w-24">
-                  <AvatarImage src={user.avatar} />
-                  <AvatarFallback className="bg-primary/10 text-primary text-xl">
-                    {getInitials(user.fullName || user.username)}
-                  </AvatarFallback>
-                </Avatar>
-                <Button 
-                  size="icon" 
-                  className="absolute bottom-0 right-0 h-8 w-8 rounded-full"
-                  variant="secondary"
-                >
-                  <Camera className="h-4 w-4" />
-                </Button>
-              </div>
-
-              <div className="text-center mb-6">
-                <h3 className="text-xl font-bold">{user.fullName || user.username}</h3>
-                <p className="text-sm text-muted-foreground">{user.email}</p>
-                <div className="mt-2">
-                  <Badge className="bg-primary/10 text-primary hover:bg-primary/20 border-none">
-                    {user.plan} Plan
-                  </Badge>
-                </div>
-              </div>
-
-              <div className="w-full space-y-3">
-                <div className="flex items-center text-sm">
-                  <User className="mr-2 h-4 w-4 text-muted-foreground" />
-                  <span>@{user.username}</span>
-                </div>
-                {user.location && (
-                  <div className="flex items-center text-sm">
-                    <MapPin className="mr-2 h-4 w-4 text-muted-foreground" />
-                    <span>{user.location}</span>
+        <Tabs defaultValue="profile" className="w-full">
+          <TabsList className="grid grid-cols-3 max-w-xl">
+            <TabsTrigger value="profile">Personal Info</TabsTrigger>
+            <TabsTrigger value="professional">Clinical Credentials</TabsTrigger>
+            <TabsTrigger value="preferences">EEG Analysis Preferences</TabsTrigger>
+          </TabsList>
+          
+          {/* Personal Information Tab */}
+          <TabsContent value="profile">
+            <div className="grid grid-cols-1 md:grid-cols-[300px_1fr] gap-6">
+              <Card>
+                <CardHeader className="text-center">
+                  <div className="flex justify-center">
+                    <Avatar className="w-24 h-24 relative group">
+                      <AvatarImage src={user.avatar} />
+                      <AvatarFallback className="text-2xl">{getInitials(user.fullName)}</AvatarFallback>
+                      <div className="absolute bottom-0 right-0 rounded-full bg-primary w-8 h-8 flex items-center justify-center cursor-pointer">
+                        <Camera className="h-4 w-4 text-primary-foreground" />
+                      </div>
+                    </Avatar>
                   </div>
-                )}
-                {user.company && (
-                  <div className="flex items-center text-sm">
-                    <Briefcase className="mr-2 h-4 w-4 text-muted-foreground" />
-                    <span>{user.company}</span>
+                  <CardTitle className="mt-2">{user.fullName}</CardTitle>
+                  <CardDescription>@{user.username}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4 text-center">
+                  <div className="flex items-center justify-center gap-2">
+                    <Badge variant="outline" className="bg-primary/10 hover:bg-primary/20 text-primary">
+                      {user.plan}
+                    </Badge>
                   </div>
-                )}
-                <div className="flex items-center text-sm">
-                  <Calendar className="mr-2 h-4 w-4 text-muted-foreground" />
-                  <span>Joined {user.joinDate}</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Profile Edit Form */}
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle>Edit Profile</CardTitle>
-              <CardDescription>Update your personal information</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleProfileUpdate} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="username">Username</Label>
-                    <Input
-                      id="username"
-                      name="username"
-                      value={user.username}
-                      onChange={handleInputChange}
-                      disabled
-                    />
+                  
+                  <div className="flex items-center justify-center text-sm">
+                    <Calendar className="mr-2 h-4 w-4 text-muted-foreground" />
+                    <span className="text-muted-foreground">Joined {user.joinDate}</span>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input
-                      id="email"
-                      name="email"
-                      type="email"
-                      value={user.email}
-                      onChange={handleInputChange}
-                      disabled
-                    />
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle>Personal Information</CardTitle>
+                  <CardDescription>
+                    Update your personal contact details
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleProfileUpdate} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="fullName" className="flex items-center gap-2">
+                          <User className="h-4 w-4" />
+                          Full Name
+                        </Label>
+                        <Input 
+                          id="fullName" 
+                          name="fullName" 
+                          value={user.fullName} 
+                          onChange={handleInputChange} 
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="email" className="flex items-center gap-2">
+                          <Mail className="h-4 w-4" />
+                          Email
+                        </Label>
+                        <Input 
+                          id="email" 
+                          name="email"
+                          type="email"
+                          value={user.email} 
+                          onChange={handleInputChange} 
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="phone" className="flex items-center gap-2">
+                          <Phone className="h-4 w-4" />
+                          Phone
+                        </Label>
+                        <Input 
+                          id="phone" 
+                          name="phone" 
+                          value={user.phone} 
+                          onChange={handleInputChange} 
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="location" className="flex items-center gap-2">
+                          <MapPin className="h-4 w-4" />
+                          Location
+                        </Label>
+                        <Input 
+                          id="location" 
+                          name="location" 
+                          value={user.location} 
+                          onChange={handleInputChange} 
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="bio" className="flex items-center gap-2">
+                        <BookOpen className="h-4 w-4" />
+                        Professional Bio
+                      </Label>
+                      <Textarea 
+                        id="bio" 
+                        name="bio"
+                        rows={4}
+                        placeholder="Share your background in neurology and EEG analysis..." 
+                        value={user.bio} 
+                        onChange={handleInputChange} 
+                      />
+                    </div>
+                    
+                    <Button type="submit" disabled={saving}>
+                      {saving ? 'Saving...' : 'Save Changes'}
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+          
+          {/* Professional Information Tab */}
+          <TabsContent value="professional">
+            <Card>
+              <CardHeader>
+                <CardTitle>Clinical Credentials</CardTitle>
+                <CardDescription>
+                  Update your professional medical information
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleProfileUpdate} className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="hospital" className="flex items-center gap-2">
+                        <Building2 className="h-4 w-4" />
+                        Hospital/Institution
+                      </Label>
+                      <Input 
+                        id="hospital" 
+                        name="hospital" 
+                        value={user.hospital} 
+                        onChange={handleInputChange} 
+                        placeholder="e.g., University Neurological Center"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="department" className="flex items-center gap-2">
+                        <Briefcase className="h-4 w-4" />
+                        Department
+                      </Label>
+                      <Select 
+                        value={user.department} 
+                        onValueChange={(value) => handleSelectChange('department', value)}
+                      >
+                        <SelectTrigger id="department">
+                          <SelectValue placeholder="Select department" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Neurology">Neurology</SelectItem>
+                          <SelectItem value="Neurosurgery">Neurosurgery</SelectItem>
+                          <SelectItem value="Neuropsychiatry">Neuropsychiatry</SelectItem>
+                          <SelectItem value="Pediatric Neurology">Pediatric Neurology</SelectItem>
+                          <SelectItem value="Clinical Neurophysiology">Clinical Neurophysiology</SelectItem>
+                          <SelectItem value="Other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="position" className="flex items-center gap-2">
+                        <Award className="h-4 w-4" />
+                        Position
+                      </Label>
+                      <Select 
+                        value={user.position} 
+                        onValueChange={(value) => handleSelectChange('position', value)}
+                      >
+                        <SelectTrigger id="position">
+                          <SelectValue placeholder="Select position" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Neurologist">Neurologist</SelectItem>
+                          <SelectItem value="Neurosurgeon">Neurosurgeon</SelectItem>
+                          <SelectItem value="Psychiatrist">Psychiatrist</SelectItem>
+                          <SelectItem value="Neurophysiologist">Neurophysiologist</SelectItem>
+                          <SelectItem value="Neuroscience Researcher">Neuroscience Researcher</SelectItem>
+                          <SelectItem value="Medical Student">Medical Student</SelectItem>
+                          <SelectItem value="Resident">Resident</SelectItem>
+                          <SelectItem value="Fellow">Fellow</SelectItem>
+                          <SelectItem value="Other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="specialization" className="flex items-center gap-2">
+                        <Brain className="h-4 w-4" />
+                        Specialization
+                      </Label>
+                      <Select 
+                        value={user.specialization} 
+                        onValueChange={(value) => handleSelectChange('specialization', value)}
+                      >
+                        <SelectTrigger id="specialization">
+                          <SelectValue placeholder="Select specialization" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Clinical Neurophysiology">Clinical Neurophysiology</SelectItem>
+                          <SelectItem value="Epileptology">Epileptology</SelectItem>
+                          <SelectItem value="Movement Disorders">Movement Disorders</SelectItem>
+                          <SelectItem value="Neuropsychiatry">Neuropsychiatry</SelectItem>
+                          <SelectItem value="Headache Medicine">Headache Medicine</SelectItem>
+                          <SelectItem value="Sleep Medicine">Sleep Medicine</SelectItem>
+                          <SelectItem value="Other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="licenseNumber" className="flex items-center gap-2">
+                        <FileCheck className="h-4 w-4" />
+                        License Number
+                      </Label>
+                      <Input 
+                        id="licenseNumber" 
+                        name="licenseNumber" 
+                        value={user.licenseNumber} 
+                        onChange={handleInputChange} 
+                        placeholder="e.g., ML-12345"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="yearsOfExperience" className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4" />
+                        Years of Experience
+                      </Label>
+                      <Input 
+                        id="yearsOfExperience" 
+                        name="yearsOfExperience" 
+                        type="number"
+                        value={user.yearsOfExperience} 
+                        onChange={handleInputChange} 
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="education" className="flex items-center gap-2">
+                        <GraduationCap className="h-4 w-4" />
+                        Education
+                      </Label>
+                      <Input 
+                        id="education" 
+                        name="education" 
+                        value={user.education} 
+                        onChange={handleInputChange} 
+                        placeholder="e.g., MD, Neurology"
+                      />
+                    </div>
                   </div>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="fullName">Full Name</Label>
-                    <Input
-                      id="fullName"
-                      name="fullName"
-                      value={user.fullName}
-                      onChange={handleInputChange}
-                      placeholder="Enter your full name"
-                    />
+                  
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-2">
+                        <Activity className="h-4 w-4" />
+                        EEG Certification
+                      </Label>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="bg-muted/20 p-3 rounded-md border-2 border-dashed flex justify-between items-center">
+                          <div className="flex items-center gap-2">
+                            <FileCheck className="h-4 w-4 text-primary" />
+                            <span className="text-sm font-medium">EEG Certification.pdf</span>
+                          </div>
+                          <Button variant="outline" size="sm">Upload New</Button>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Phone Number</Label>
-                    <Input
-                      id="phone"
-                      name="phone"
-                      value={user.phone}
-                      onChange={handleInputChange}
-                      placeholder="Enter your phone number"
-                    />
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="company">Company</Label>
-                    <Input
-                      id="company"
-                      name="company"
-                      value={user.company}
-                      onChange={handleInputChange}
-                      placeholder="Enter your company name"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="location">Location</Label>
-                    <Input
-                      id="location"
-                      name="location"
-                      value={user.location}
-                      onChange={handleInputChange}
-                      placeholder="Enter your location"
-                    />
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="bio">Bio</Label>
-                  <Textarea
-                    id="bio"
-                    name="bio"
-                    value={user.bio}
-                    onChange={handleInputChange}
-                    placeholder="Tell us about yourself"
-                    rows={4}
-                  />
-                </div>
-                
-                <CardFooter className="px-0 pb-0">
+                  
                   <Button type="submit" disabled={saving}>
-                    {saving ? 'Saving...' : 'Save Changes'}
+                    {saving ? 'Saving...' : 'Update Credentials'}
                   </Button>
-                </CardFooter>
-              </form>
-            </CardContent>
-          </Card>
-        </div>
+                </form>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          {/* EEG Analysis Preferences Tab */}
+          <TabsContent value="preferences">
+            <Card>
+              <CardHeader>
+                <CardTitle>EEG Analysis Preferences</CardTitle>
+                <CardDescription>
+                  Customize your Digital Twin of the Brain analysis settings
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form className="space-y-6">
+                  <div className="space-y-4">
+                    <h3 className="font-medium">Default Analysis Settings</h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="eegMontage">Default EEG Montage</Label>
+                        <Select defaultValue="bipolar">
+                          <SelectTrigger id="eegMontage">
+                            <SelectValue placeholder="Select montage" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="bipolar">Bipolar</SelectItem>
+                            <SelectItem value="referential">Referential</SelectItem>
+                            <SelectItem value="average">Average Reference</SelectItem>
+                            <SelectItem value="laplacian">Laplacian</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="frequencyBands">Default Frequency Bands</Label>
+                        <Select defaultValue="standard">
+                          <SelectTrigger id="frequencyBands">
+                            <SelectValue placeholder="Select frequency bands" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="standard">Standard (Delta, Theta, Alpha, Beta, Gamma)</SelectItem>
+                            <SelectItem value="extended">Extended (Includes High Gamma)</SelectItem>
+                            <SelectItem value="custom">Custom Bands</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="artefactRemoval">Artefact Removal</Label>
+                        <Select defaultValue="automatic">
+                          <SelectTrigger id="artefactRemoval">
+                            <SelectValue placeholder="Select artefact removal method" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="automatic">Automatic</SelectItem>
+                            <SelectItem value="manual">Manual Review</SelectItem>
+                            <SelectItem value="hybrid">Hybrid (Auto + Confirmation)</SelectItem>
+                            <SelectItem value="none">None</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="reportDetail">Report Detail Level</Label>
+                        <Select defaultValue="comprehensive">
+                          <SelectTrigger id="reportDetail">
+                            <SelectValue placeholder="Select report detail level" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="summary">Summary</SelectItem>
+                            <SelectItem value="standard">Standard</SelectItem>
+                            <SelectItem value="comprehensive">Comprehensive</SelectItem>
+                            <SelectItem value="research">Research Grade</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    
+                    <div className="pt-4">
+                      <h3 className="font-medium mb-2">Digital Twin Simulation Preferences</h3>
+                      
+                      <div className="space-y-4 bg-muted/10 p-4 rounded-md">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="simulationComplexity">Simulation Complexity</Label>
+                            <Select defaultValue="high">
+                              <SelectTrigger id="simulationComplexity">
+                                <SelectValue placeholder="Select complexity" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="low">Low (Faster Processing)</SelectItem>
+                                <SelectItem value="medium">Medium</SelectItem>
+                                <SelectItem value="high">High (Detailed Analysis)</SelectItem>
+                                <SelectItem value="research">Research Grade</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <Label htmlFor="modelingApproach">Modeling Approach</Label>
+                            <Select defaultValue="dynamic">
+                              <SelectTrigger id="modelingApproach">
+                                <SelectValue placeholder="Select approach" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="static">Static (Single State)</SelectItem>
+                                <SelectItem value="dynamic">Dynamic (Multiple States)</SelectItem>
+                                <SelectItem value="adaptive">Adaptive (Learning)</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                  </div>
+                  
+                  <Button type="submit">Save Preferences</Button>
+                </form>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </DashboardLayout>
   );
