@@ -15,6 +15,9 @@ import pickle
 from mdl_4 import Net
 # Import timm which is required by the model
 import timm
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"  # Update this URL
+GROQ_MODEL = "llama-3.3-70b-versatile"  # Add this model
 
 # Add Net to PyTorch's safe globals
 torch.serialization.add_safe_globals([Net])
@@ -272,24 +275,115 @@ def upload_eeg():
             
         # Calculate condition probabilities
         condition_probabilities = calculate_condition_probabilities(predictions)
-        
+                # Prepare raw data and percentage data for AI context
+                # Prepare raw data and percentage data for AI context
+        raw_data_json = {
+            "lpd": predictions[1],
+            "gpd": predictions[2],
+            "lrda": predictions[3],
+            "grda": predictions[4],
+            "other": predictions[5]
+        }
+
+        percentage_data_json = {
+            "epilepsy": f"{condition_probabilities['epilepsy'] * 100:.2f}%",
+            "cognitive_stress": f"{condition_probabilities['cognitive_stress'] * 100:.2f}%",
+            "depression": f"{condition_probabilities['depression'] * 100:.2f}%"
+        }
+
+        # Create the Groq LLM prompt
+        prompt = f"""
+You are a clinical neurologist AI that analyzes EEG output probabilities.
+
+Given:
+- LPD: {predictions[1]}
+- GPD: {predictions[2]}
+- LRDA: {predictions[3]}
+- GRDA: {predictions[4]}
+- Other: {predictions[5]}
+
+You inferred:
+- Epilepsy likelihood: {condition_probabilities['epilepsy']:.2f}
+- Cognitive stress likelihood: {condition_probabilities['cognitive_stress']:.2f}
+- Depression likelihood: {condition_probabilities['depression']:.2f}
+
+Give a short, clinically sound explanation about these results in simple terms. Mention what these probabilities mean and what the person should do next.
+"""
+
+        # Make Groq API call
+        try:
+            groq_response = requests.post(
+                GROQ_API_URL,
+                headers={
+                    "Authorization": f"Bearer {GROQ_API_KEY}",
+                    "Content-Type": "application/json"
+                },
+                json={
+                    "model": GROQ_MODEL,
+                    "messages": [
+                        {"role": "system", "content": "You are a neurologist assistant."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    "temperature": 0.7
+                }
+            )
+
+            groq_json = groq_response.json()
+            ai_explanation = groq_json["choices"][0]["message"]["content"].strip()
+        except Exception as e:
+            logger.error(f"Groq API call failed: {e}")
+            ai_explanation = "Unable to fetch explanation from AI model."
+
+        # Final response JSON
         return jsonify({
-            "success": True,
-            "fif_path": temp_fif_path,
-            "parquet_path": parquet_path,
-            "model_loaded_successfully": model_loaded,
-            "raw_predictions": predictions.tolist() if hasattr(predictions, 'tolist') else predictions,
-            "condition_probabilities": condition_probabilities,
-            "error_details": error_details if not model_loaded else []
+            "raw": raw_data_json,
+            "percentage": percentage_data_json,
+            "ai_explanation": ai_explanation
         })
-            
-    except Exception as e:
-        error_msg = f"Unexpected error: {str(e)}\n{traceback.format_exc()}"
-        logger.error(error_msg)
-        return jsonify({"error": error_msg}), 500
+
     finally:
-        # We won't remove the temp files since they might be useful for debugging
-        pass
+        # Cleanup temporary files
+        if os.path.exists(temp_fif_path):
+            os.remove(temp_fif_path)
+        if os.path.exists(parquet_path):
+            os.remove(parquet_path)
+
+@app.route('/chatbot', methods=['POST'])
+def chatbot():
+    data = request.get_json()
+    message = data.get("message")
+
+    if not GROQ_API_KEY:
+        return jsonify({"error": True, "response": "GROQ_API_KEY is not set"}), 500
+
+    headers = {
+        "Authorization": f"Bearer {GROQ_API_KEY}",
+        "Content-Type": "application/json"
+    }
+
+    payload = {
+        "model": GROQ_MODEL,
+        "messages": [
+            {"role": "user", "content": message}
+        ],
+        "temperature": 0.2
+    }
+
+    try:
+        response = requests.post(GROQ_API_URL, headers=headers, json=payload)
+        response.raise_for_status()
+        data = response.json()
+    except requests.RequestException as e:
+        logger.error(f"Request error: {str(e)}")
+        return jsonify({"error": True, "response": "Failed to connect to Groq API"}), 500
+    except ValueError as e:
+        logger.error(f"JSON decode error: {str(e)}")
+        return jsonify({"error": True, "response": "Invalid JSON response from Groq API"}), 500
+
+    if "choices" not in data or not data["choices"]:
+        return jsonify({"error": True, "response": "Invalid response structure from Groq API"}), 500
+
+    return jsonify({"error": False, "response": data["choices"][0]["message"]["content"]})
 
 if __name__ == '__main__':
     # Run the Flask app
