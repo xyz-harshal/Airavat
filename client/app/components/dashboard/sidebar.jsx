@@ -31,6 +31,7 @@ const navItems = [
     icon: Brain,
     subItems: [
       { name: "Upload EEG Data", href: "/dashboard/services/upload-eeg", icon: Upload },
+      { name: "Analysis Results", href: "/dashboard/services/analysis-results", icon: FileBarChart2 },
       { name: "Brain Analysis", href: "/dashboard/services/brain-analysis", icon: Microscope },
       
     ]
