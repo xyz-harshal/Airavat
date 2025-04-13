@@ -110,3 +110,118 @@ async def analyze_multiple_patients_eeg(request: EegAnalysisRequest):
     except Exception as e:
         print(f"Error analyzing patients' EEG data: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal server error")
+
+@router.post("/patients/save-analysis")
+async def save_patient_analysis(request: dict):
+    """Save EEG analysis data for a specific patient"""
+    try:
+        client = service_supabase if service_supabase else supabase
+        
+        # Required fields
+        patient_id = request.get("patient_id")
+        user_id = request.get("user_id")
+        
+        if not patient_id or not user_id:
+            raise HTTPException(status_code=400, detail="Patient ID and User ID are required")
+        
+        # Get the analysis data
+        raw_predictions = request.get("raw_predictions")
+        condition_probabilities = request.get("condition_probabilities")
+        medication = request.get("medication")
+        ai_content = request.get("ai_content")
+        
+        # Verify the patient exists and belongs to the user
+        patient_response = client.table("patients").select("*").eq("id", patient_id).eq("uid", user_id).execute()
+        
+        if not patient_response.data or len(patient_response.data) == 0:
+            return {"error": True, "message": f"Patient with ID {patient_id} not found or does not belong to the user"}
+        
+        # Update the patient record with the analysis data
+        update_data = {}
+        if raw_predictions is not None:
+            update_data["raw_predictions"] = raw_predictions
+        if condition_probabilities is not None:
+            update_data["condition_probabilities"] = condition_probabilities
+        if medication is not None:
+            update_data["medication"] = medication
+        if ai_content is not None:
+            update_data["ai_content"] = ai_content
+        
+        # Only update if we have data to update
+        if update_data:
+            update_response = client.table("patients").update(update_data).eq("id", patient_id).eq("uid", user_id).execute()
+            
+            if not update_response.data:
+                return {"error": True, "message": "Failed to update patient record"}
+            
+            return {
+                "error": False, 
+                "message": "Patient analysis data saved successfully",
+                "data": update_response.data[0]
+            }
+        else:
+            return {"error": True, "message": "No analysis data provided to save"}
+            
+    except Exception as e:
+        print(f"Error saving patient analysis data: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+@router.post("/patients/save-analysis-by-name")
+async def save_patient_analysis_by_name(request: dict):
+    """Save EEG analysis data for a specific patient using their name"""
+    try:
+        client = service_supabase if service_supabase else supabase
+        
+        # Required fields
+        patient_name = request.get("patient_name")
+        user_id = request.get("user_id")
+        
+        if not patient_name or not user_id:
+            raise HTTPException(status_code=400, detail="Patient name and User ID are required")
+        
+        # Get the analysis data
+        raw_predictions = request.get("raw_predictions")
+        condition_probabilities = request.get("condition_probabilities")
+        medication = request.get("medication")
+        ai_content = request.get("ai_content")
+        print(request)
+        
+        # Verify the patient exists and belongs to the user
+        patient_response = client.table("patients").select("*").eq("name", patient_name).eq("uid", user_id).execute()
+        
+        if not patient_response.data or len(patient_response.data) == 0:
+            return {"error": True, "message": f"Patient with name '{patient_name}' not found or does not belong to the user"}
+        
+        # Get the first matching patient (assuming names are unique per user)
+        patient = patient_response.data[0]
+        patient_id = patient["id"]
+        
+        # Update the patient record with the analysis data
+        update_data = {}
+        if raw_predictions is not None:
+            update_data["raw_predictions"] = raw_predictions
+        if condition_probabilities is not None:
+            update_data["condition_probabilities"] = condition_probabilities
+        if medication is not None:
+            update_data["medication"] = medication
+        if ai_content is not None:
+            update_data["ai_content"] = ai_content
+        
+        # Only update if we have data to update
+        if update_data:
+            update_response = client.table("patients").update(update_data).eq("id", patient_id).eq("uid", user_id).execute()
+            
+            if not update_response.data:
+                return {"error": True, "message": "Failed to update patient record"}
+            
+            return {
+                "error": False, 
+                "message": "Patient analysis data saved successfully",
+                "data": update_response.data[0]
+            }
+        else:
+            return {"error": True, "message": "No analysis data provided to save"}
+            
+    except Exception as e:
+        print(f"Error saving patient analysis data: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error")

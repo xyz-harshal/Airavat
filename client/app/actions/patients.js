@@ -48,3 +48,93 @@ export async function createPatient(patientData) {
     throw error;
   }
 }
+
+export async function savePatientAnalysis(patientId, userId, analysisData) {
+  try {
+    // Validate required fields
+    if (!patientId) {
+      throw new Error("Patient ID is required");
+    }
+
+    if (!userId) {
+      throw new Error("User ID is required");
+    }
+
+    // Prepare the request payload
+    const payload = {
+      patient_id: patientId,
+      user_id: userId,
+      raw_predictions: analysisData.raw,
+      condition_probabilities: analysisData.percentage,
+      medication: analysisData.medication,
+      ai_content: analysisData.ai_content
+    };
+
+    const response = await fetch(`${API_URL}/api/patients/save-analysis`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      throw new Error(
+        `API error: ${response.status}${
+          errorData ? ` - ${errorData.detail}` : ""
+        }`
+      );
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error saving patient analysis data:", error);
+    throw error;
+  }
+}
+
+export async function savePatientAnalysisByName(patientName, userId, analysisData) {
+  try {
+    // Validate required fields
+    if (!patientName) {
+      throw new Error("Patient name is required");
+    }
+
+    if (!userId) {
+      throw new Error("User ID is required");
+    }
+
+    // Prepare the request payload
+    const payload = {
+      patient_name: patientName,
+      user_id: userId,
+      raw_predictions: analysisData.raw,
+      condition_probabilities: analysisData.percentage,
+      medication: analysisData.medication,
+      ai_content: analysisData.ai_content
+    };
+
+    const response = await fetch(`${API_URL}/api/patients/save-analysis-by-name`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      throw new Error(
+        `API error: ${response.status}${
+          errorData ? ` - ${errorData.detail}` : ""
+        }`
+      );
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error saving patient analysis data:", error);
+    throw error;
+  }
+}
