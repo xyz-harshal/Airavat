@@ -26,7 +26,6 @@ export default function UploadEEGPage() {
     name: "",
     gender: "",
     note: "",
-    details: "",
     status: "",
     age: "",
     conditions: [],

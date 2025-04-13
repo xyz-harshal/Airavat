@@ -19,7 +19,7 @@ async def chatbot(req: dict):
 
     full_messages = [{
         "role": "system",
-        "content": f"Context: {alpha_context}. You are being used as a AI chatbot for an EEG signal analyser. The main context you are receving is the content analysed from the EEG signal. You will also receive the context of the entire conversation you have with the user. Help the user with whatever he wants. Be concise, dont go deep unless the user asks you to."
+        "content": f" You are being used as a AI chatbot for an EEG signal analyser. The main context you are receving is the content analysed from the EEG signal. You will also receive the context of the entire conversation you have with the user. Help the user with whatever he wants. Be concise, dont go deep unless the user asks you to."
     }]
     for msg in conversation:
         # msg is dict with 'role' and 'content'

@@ -1,8 +1,10 @@
 from fastapi import APIRouter, HTTPException
 from supabase import create_client, Client
 import os
+import uuid
 from pydantic import BaseModel
 from typing import List, Optional
+from models.patientModel import Patient
 
 router = APIRouter()
 
@@ -17,17 +19,6 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 service_supabase = None
 if SUPABASE_SERVICE_KEY:
     service_supabase: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
-
-class Patient(BaseModel):
-    id: str
-    name: str
-    gender: str
-    note: Optional[str] = None
-    status: str
-    age: int
-    conditions: List[str] = []
-    risk: str
-    uid: str
 
 class PatientResponse(BaseModel):
     error: bool
@@ -64,19 +55,45 @@ async def create_patient(patient: Patient):
     try:
         client = service_supabase if service_supabase else supabase
         patient_data = patient.dict()
+        print(f"Received patient data: {patient_data}")
 
         if not patient_data.get("uid"):
             raise HTTPException(status_code=400, detail="UID is required")
+
+        # The id should be auto-generated if not provided
+        if not patient_data.get("id"):
+            patient_data["id"] = str(uuid.uuid4())
+
+        # Ensure conditions is a list
+        if patient_data.get("conditions") is None:
+            patient_data["conditions"] = []
+        
+        # Convert age to int if it's a string
+        if isinstance(patient_data.get("age"), str):
+            try:
+                patient_data["age"] = int(patient_data["age"])
+            except ValueError:
+                raise HTTPException(status_code=400, detail="Age must be a valid number")
+
+        # Convert gender to lowercase for consistency
+        if patient_data.get("gender"):
+            patient_data["gender"] = patient_data["gender"].lower()
+
+        # Ensure status is valid
+        if patient_data.get("status"):
+            patient_data["status"] = patient_data["status"].lower()
 
         response = client.table("patients").insert(patient_data).execute()
 
         if not response.data:
             raise HTTPException(status_code=500, detail="Failed to create patient record")
 
-        return {"message": "Patient record created successfully", "data": response.data}
+        return {"error": False, "message": "Patient record created successfully", "data": response.data[0]}
     except Exception as e:
         print(f"Error creating patient record: {str(e)}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+        if isinstance(e, HTTPException):
+            raise e
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 @router.post("/patients/analyze-eeg", response_model=EegAnalysisResponse)
 async def analyze_multiple_patients_eeg(request: EegAnalysisRequest):
