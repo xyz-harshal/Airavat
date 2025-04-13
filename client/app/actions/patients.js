@@ -25,21 +25,40 @@ export async function createPatient(patientData) {
       throw new Error("User ID (uid) is required");
     }
 
+    // Create a cleaned version of the data with proper formatting
+    const cleanedData = {
+      ...patientData,
+      // Convert age to number if it's a string
+      age: typeof patientData.age === "string" ? parseInt(patientData.age, 10) : patientData.age,
+      // Ensure conditions is an array
+      conditions: Array.isArray(patientData.conditions) ? patientData.conditions : (patientData.conditions ? [patientData.conditions] : []),
+      // Make sure note is not undefined
+      note: patientData.note || ""
+    };
+
+    console.log("Creating patient with data:", cleanedData);
     const response = await fetch(`${API_URL}/api/patients`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(patientData),
+      body: JSON.stringify(cleanedData),
     });
 
+    // Check for detailed error information
     if (!response.ok) {
-      const errorData = await response.json().catch(() => null);
-      throw new Error(
-        `API error: ${response.status}${
-          errorData ? ` - ${errorData.detail}` : ""
-        }`
-      );
+      let errorMessage = `API error: ${response.status}`;
+      
+      try {
+        const errorData = await response.json();
+        if (errorData && (errorData.detail || errorData.message)) {
+          errorMessage += ` - ${errorData.detail || errorData.message}`;
+        }
+      } catch (parseError) {
+        console.error("Error parsing error response:", parseError);
+      }
+      
+      throw new Error(errorMessage);
     }
 
     return await response.json();
