@@ -147,8 +147,13 @@ export default function UploadEEGPage() {
                 description: `EEG data analyzed for ${selectedPatient.name}`
               });
               
-              const resultData = encodeURIComponent(JSON.stringify(result.data));
-              router.push(`/dashboard/services/analysis-results?data=${resultData}&patientId=${selectedPatient.id}&patientName=${encodeURIComponent(selectedPatient.name)}&resultId=${resultId}`);
+              // Store the result data in localStorage temporarily
+              localStorage.setItem('analysisResultData', JSON.stringify(result.data));
+              localStorage.setItem('analysisPatientId', selectedPatient.id);
+              localStorage.setItem('analysisPatientName', selectedPatient.name);
+              localStorage.setItem('analysisResultId', resultId);
+              
+              router.push(`/dashboard/services/analysis-results`);
             }, 1500);
             return 100;
           }
