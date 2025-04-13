@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import DashboardLayout from "@/app/components/dashboard/layout";
 import WelcomeCard from "@/app/components/dashboard/welcome-card";
 import StatisticsPanel from "@/app/components/dashboard/statistics-panel";
-import ServiceCards from "@/app/components/dashboard/service-cards";
+
 
 export default function Dashboard() {
   const router = useRouter();
