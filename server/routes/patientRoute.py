@@ -19,6 +19,7 @@ if SUPABASE_SERVICE_KEY:
     service_supabase: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 
 class Patient(BaseModel):
+    id: str
     name: str
     gender: str
     note: Optional[str] = None
