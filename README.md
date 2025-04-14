@@ -68,6 +68,10 @@ cd airavat
 
 ### 2️⃣ Backend Setup
 
+Airavat has two backend services: a FastAPI server and a Flask server. Both need to be running for full functionality.
+
+#### FastAPI Backend
+
 ```bash
 # Create and activate virtual environment
 cd server
@@ -83,8 +87,19 @@ venv\Scripts\activate
 pip install -r requirements.txt
 
 # Create .env file (see template below)
-# Start the server
+# Start the FastAPI server
 uvicorn main:app --reload --host 0.0.0.0 --port 8000
+```
+
+#### Flask Backend
+
+```bash
+# With the same virtual environment active
+cd server
+
+# Start the Flask server
+python app.py
+# This will run on port 5000 by default
 ```
 
 **Backend `.env` Template:**
