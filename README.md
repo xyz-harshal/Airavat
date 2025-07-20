@@ -1,4 +1,4 @@
-# 🧠 AIRAVAT: Brain Digital Twin Platform
+# 🧠 NeuroTwin: Brain Digital Twin Platform
 
 <div align="center">
 
@@ -12,9 +12,9 @@
 
 </div>
 
-## 🚀 What is Airavat?
+## 🚀 What is NeuroTwin?
 
-Airavat is a cutting-edge platform that creates personalized **Digital Brain Twins** from EEG data, enabling medical professionals to:
+NeuroTwin is a cutting-edge platform that creates personalized **Digital Brain Twins** from EEG data, enabling medical professionals to:
 
 - 📊 Analyze EEG patterns for neurological conditions
 - 💊 Simulate medication responses before prescription
@@ -22,7 +22,7 @@ Airavat is a cutting-edge platform that creates personalized **Digital Brain Twi
 - 🧠 Visualize brain activity patterns in 3D
 - 🤖 Leverage AI for automated clinical insights
 
-> **Note:** Airavat is a next-generation neural modeling platform that transforms how clinicians interact with patient brain data.
+> **Note:** NeuroTwin is a next-generation neural modeling platform that transforms how clinicians interact with patient brain data.
 
 ## ✨ Key Features
 
@@ -62,13 +62,13 @@ Airavat is a cutting-edge platform that creates personalized **Digital Brain Twi
 
 ### 1️⃣ Clone the Repository
 ```bash
-git clone https://github.com/yourusername/airavat.git
-cd airavat
+git clone https://github.com/yourusername/NeuroTwin.git
+cd NeuroTwin
 ```
 
 ### 2️⃣ Backend Setup
 
-Airavat has two backend services: a FastAPI server and a Flask server. Both need to be running for full functionality.
+NeuroTwin has two backend services: a FastAPI server and a Flask server. Both need to be running for full functionality.
 
 #### FastAPI Backend
 
@@ -205,7 +205,7 @@ vercel
 
 ## 📱 Desktop Application
 
-Airavat can also run as a desktop application using Electron:
+NeuroTwin can also run as a desktop application using Electron:
 
 ```bash
 # Run Electron dev mode
@@ -242,9 +242,9 @@ npm run electron-build
 
 <div align="center">
   <p>
-    <strong>Airavat: Transforming Neurological Care with Digital Brain Twins</strong>
+    <strong>NeuroTwin: Transforming Neurological Care with Digital Brain Twins</strong>
   </p>
   <p>
-    Made with ❤️ by the Airavat Team
+    Made with ❤️ by the NeuroTwin Team
   </p>
 </div>
